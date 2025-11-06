@@ -122,7 +122,7 @@ export function DeliveryList() {
     );
   }
 
-  const deliveries = data?.deliveries || [];
+  const deliveries: DeliveryResponse[] = data?.deliveries || [];
 
   return (
     <div className="space-y-4">

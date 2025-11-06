@@ -16,6 +16,8 @@ export function CreateDeliveryForm() {
   // Generate order reference once on mount
   const [orderRef] = useState(() => `ORDER-${Date.now()}`);
   const [shipmentPromiseId, setShipmentPromiseId] = useState<string | null>(null);
+  const [scheduledPickupTime, setScheduledPickupTime] = useState<string | null>(null);
+  const [scheduledDropoffTime, setScheduledDropoffTime] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     // Dropoff location for quote
@@ -26,6 +28,7 @@ export function CreateDeliveryForm() {
     dropoffLon: '23.781103',
     language: 'en',
     minPrepTime: '60',
+    scheduledDropoffTime: '', // Add scheduled dropoff time field
 
     // Pickup
     pickupComment: '',
@@ -76,9 +79,22 @@ export function CreateDeliveryForm() {
       min_preparation_time_minutes: parseInt(formData.minPrepTime),
     };
 
+    // Add scheduled dropoff time if provided
+    if (formData.scheduledDropoffTime) {
+      request.scheduled_dropoff_time = formData.scheduledDropoffTime;
+    }
+
     try {
       const result = await shipmentPromiseMutation.mutateAsync(request);
       setShipmentPromiseId(result.id);
+      
+      // Extract scheduled times from the quote response
+      if (result.pickup?.options?.scheduled_time) {
+        setScheduledPickupTime(result.pickup.options.scheduled_time);
+      }
+      if (result.dropoff?.options?.scheduled_time) {
+        setScheduledDropoffTime(result.dropoff.options.scheduled_time);
+      }
     } catch (error) {
       console.error('Failed to get shipment promise:', error);
     }
@@ -96,6 +112,8 @@ export function CreateDeliveryForm() {
       pickup: {
         options: {
           min_preparation_time_minutes: parseInt(formData.minPrepTime),
+          // Add scheduled pickup time from quote response if available
+          ...(scheduledPickupTime && { scheduled_time: scheduledPickupTime }),
         },
         comment: formData.pickupComment,
       },
@@ -109,6 +127,8 @@ export function CreateDeliveryForm() {
         comment: formData.dropoffComment,
         options: {
           is_no_contact: formData.noContact,
+          // Add scheduled dropoff time from quote response if available
+          ...(scheduledDropoffTime && { scheduled_time: scheduledDropoffTime }),
         },
       },
       price: {
@@ -170,8 +190,10 @@ export function CreateDeliveryForm() {
     try {
       await createDelivery.mutateAsync(request);
       alert('Delivery created successfully!');
-      // Reset shipment promise for next order
+      // Reset shipment promise and scheduled times for next order
       setShipmentPromiseId(null);
+      setScheduledPickupTime(null);
+      setScheduledDropoffTime(null);
     } catch (error) {
       alert(`Failed to create delivery: ${error}`);
     }
@@ -265,6 +287,31 @@ export function CreateDeliveryForm() {
                   required
                 />
               </div>
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium">Scheduled Dropoff Time (optional)</label>
+                <Input
+                  type="datetime-local"
+                  onChange={(e) => {
+                    // Convert to ISO 8601 format when a value is selected
+                    const localDateTime = e.target.value;
+                    if (localDateTime) {
+                      const isoDateTime = new Date(localDateTime).toISOString();
+                      setFormData({ ...formData, scheduledDropoffTime: isoDateTime });
+                    } else {
+                      setFormData({ ...formData, scheduledDropoffTime: '' });
+                    }
+                  }}
+                  placeholder="Select scheduled dropoff time"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Leave empty for ASAP delivery. Example: 2025-11-07T14:15:22Z
+                </p>
+                {formData.scheduledDropoffTime && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Will send: {formData.scheduledDropoffTime}
+                  </p>
+                )}
+              </div>
             </div>
             <Button type="submit" disabled={shipmentPromiseMutation.isPending} className="w-full">
               {shipmentPromiseMutation.isPending ? 'Getting Quote...' : 'Get Quote'}
@@ -276,6 +323,16 @@ export function CreateDeliveryForm() {
                 {shipmentPromiseMutation.data.fee && (
                   <p className="text-sm text-green-600">
                     Fee: {shipmentPromiseMutation.data.fee.amount} {shipmentPromiseMutation.data.fee.currency}
+                  </p>
+                )}
+                {shipmentPromiseMutation.data.pickup?.options?.scheduled_time && (
+                  <p className="text-sm text-green-600">
+                    Scheduled Pickup Time: {shipmentPromiseMutation.data.pickup.options.scheduled_time}
+                  </p>
+                )}
+                {shipmentPromiseMutation.data.dropoff?.options?.scheduled_time && (
+                  <p className="text-sm text-green-600">
+                    Scheduled Dropoff Time: {shipmentPromiseMutation.data.dropoff.options.scheduled_time}
                   </p>
                 )}
               </div>
