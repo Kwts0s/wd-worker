@@ -6,6 +6,7 @@ interface WoltDriveState {
   // Configuration
   apiToken: string | null;
   merchantId: string | null;
+  venueId: string | null;
   isDevelopment: boolean;
   
   // Deliveries
@@ -17,7 +18,7 @@ interface WoltDriveState {
   error: string | null;
   
   // Actions
-  setConfig: (apiToken: string, merchantId: string, isDevelopment?: boolean) => void;
+  setConfig: (apiToken: string, merchantId: string, venueId: string, isDevelopment?: boolean) => void;
   clearConfig: () => void;
   
   addDelivery: (delivery: DeliveryResponse) => void;
@@ -42,6 +43,7 @@ export const useWoltDriveStore = create<WoltDriveState>()(
         // Initial state
         apiToken: null,
         merchantId: null,
+        venueId: null,
         isDevelopment: true,
         deliveries: [],
         selectedDelivery: null,
@@ -49,10 +51,11 @@ export const useWoltDriveStore = create<WoltDriveState>()(
         error: null,
 
         // Configuration actions
-        setConfig: (apiToken, merchantId, isDevelopment = true) => {
+        setConfig: (apiToken, merchantId, venueId, isDevelopment = true) => {
           set({
             apiToken,
             merchantId,
+            venueId,
             isDevelopment,
           });
         },
@@ -61,6 +64,7 @@ export const useWoltDriveStore = create<WoltDriveState>()(
           set({
             apiToken: null,
             merchantId: null,
+            venueId: null,
             deliveries: [],
             selectedDelivery: null,
           });
@@ -130,6 +134,7 @@ export const useWoltDriveStore = create<WoltDriveState>()(
         partialize: (state) => ({
           apiToken: state.apiToken,
           merchantId: state.merchantId,
+          venueId: state.venueId,
           isDevelopment: state.isDevelopment,
           deliveries: state.deliveries,
         }),

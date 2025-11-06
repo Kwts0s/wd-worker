@@ -9,21 +9,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 export function ConfigurationForm() {
-  const { apiToken, merchantId, isDevelopment, setConfig, clearConfig } = useWoltDriveStore();
+  const { apiToken, merchantId, venueId, isDevelopment, setConfig, clearConfig } = useWoltDriveStore();
   const [tempToken, setTempToken] = useState(apiToken || '');
   const [tempMerchantId, setTempMerchantId] = useState(merchantId || '');
+  const [tempVenueId, setTempVenueId] = useState(venueId || '');
   const [tempIsDev, setTempIsDev] = useState(isDevelopment);
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = () => {
-    if (!tempToken.trim() || !tempMerchantId.trim()) {
-      setError('API Token and Merchant ID are required');
+    if (!tempToken.trim() || !tempMerchantId.trim() || !tempVenueId.trim()) {
+      setError('API Token, Merchant ID, and Venue ID are required');
       return;
     }
 
     try {
-      initializeWoltClient(tempToken, tempMerchantId, tempIsDev);
-      setConfig(tempToken, tempMerchantId, tempIsDev);
+      initializeWoltClient(tempToken, tempMerchantId, tempVenueId, tempIsDev);
+      setConfig(tempToken, tempMerchantId, tempVenueId, tempIsDev);
       setError(null);
     } catch {
       setError('Failed to initialize Wolt Drive client');
@@ -34,11 +35,12 @@ export function ConfigurationForm() {
     clearConfig();
     setTempToken('');
     setTempMerchantId('');
+    setTempVenueId('');
     setTempIsDev(true);
     setError(null);
   };
 
-  const isConfigured = !!apiToken && !!merchantId;
+  const isConfigured = !!apiToken && !!merchantId && !!venueId;
 
   return (
     <Card>
@@ -78,6 +80,18 @@ export function ConfigurationForm() {
             placeholder="Enter your merchant ID"
             value={tempMerchantId}
             onChange={(e) => setTempMerchantId(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="venueId" className="text-sm font-medium">
+            Venue ID
+          </label>
+          <Input
+            id="venueId"
+            placeholder="Enter your venue ID"
+            value={tempVenueId}
+            onChange={(e) => setTempVenueId(e.target.value)}
           />
         </div>
 

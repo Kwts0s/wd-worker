@@ -96,7 +96,7 @@ In Transit → Delivered (or Cancelled)
 
 **Purpose:** Calculate delivery cost and estimated time before creating an order.
 
-**Endpoint:** `POST /merchants/{merchant_id}/delivery-quote`
+**Endpoint:** `POST /v1/venues/{venue_id}/shipment-promises`
 
 **Request:**
 ```json
@@ -143,7 +143,7 @@ In Transit → Delivered (or Cancelled)
 
 **Purpose:** Create a new delivery order.
 
-**Endpoint:** `POST /merchants/{merchant_id}/deliveries`
+**Endpoint:** `POST /v1/venues/{venue_id}/deliveries`
 
 **Request:**
 ```json
@@ -233,7 +233,7 @@ In Transit → Delivered (or Cancelled)
 
 **Purpose:** Retrieve current status and details of a delivery.
 
-**Endpoint:** `GET /merchants/{merchant_id}/deliveries/{delivery_id}`
+**Endpoint:** `GET /v1/venues/{venue_id}/deliveries/{delivery_id}`
 
 **Response:**
 ```json
@@ -293,7 +293,7 @@ In Transit → Delivered (or Cancelled)
 
 **Purpose:** Get a list of all deliveries with filtering and pagination.
 
-**Endpoint:** `GET /merchants/{merchant_id}/deliveries`
+**Endpoint:** `GET /v1/venues/{venue_id}/deliveries`
 
 **Query Parameters:**
 - `limit`: Number of results (1-100, default 20)
@@ -333,7 +333,7 @@ GET /merchants/merchant-123/deliveries?limit=20&offset=0&status=in_transit
 
 **Purpose:** Cancel a delivery before it's completed.
 
-**Endpoint:** `POST /merchants/{merchant_id}/deliveries/{delivery_id}/cancel`
+**Endpoint:** `POST /v1/venues/{venue_id}/deliveries/{delivery_id}/cancel`
 
 **Request:**
 ```json
@@ -368,7 +368,7 @@ GET /merchants/merchant-123/deliveries?limit=20&offset=0&status=in_transit
 
 **Purpose:** Get real-time tracking information including courier location.
 
-**Endpoint:** `GET /merchants/{merchant_id}/deliveries/{delivery_id}/tracking`
+**Endpoint:** `GET /v1/venues/{venue_id}/deliveries/{delivery_id}/tracking`
 
 **Response:**
 ```json
