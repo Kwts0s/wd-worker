@@ -78,6 +78,7 @@ export interface ShipmentPromiseRequest {
   lon: number;
   language: string;
   min_preparation_time_minutes: number;
+  scheduled_dropoff_time?: string; // ISO 8601 timestamp
 }
 
 export interface ShipmentPromiseResponse {
@@ -119,10 +120,12 @@ export interface Recipient {
 // Pickup/Dropoff Options
 export interface PickupOptions {
   min_preparation_time_minutes: number;
+  scheduled_time?: string; // ISO 8601 timestamp
 }
 
 export interface DropoffOptions {
   is_no_contact: boolean;
+  scheduled_time?: string; // ISO 8601 timestamp
 }
 
 // SMS Notifications

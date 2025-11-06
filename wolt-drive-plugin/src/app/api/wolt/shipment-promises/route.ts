@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DeliveryQuoteRequest } from '@/types/wolt-drive';
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  let requestBody: DeliveryQuoteRequest | null = null;
+  
   try {
-    const body: DeliveryQuoteRequest = await request.json();
+    requestBody = await request.json();
 
     // Debug: Log all environment variables
     console.log('All env vars:', {
@@ -29,46 +32,96 @@ export async function POST(request: NextRequest) {
 
     if (!apiToken || !venueId) {
       console.error('Missing API configuration:', { apiToken: !!apiToken, venueId: !!venueId });
-      return NextResponse.json(
-        { 
-          error: 'Missing API configuration',
-          details: { hasToken: !!apiToken, hasVenueId: !!venueId }
-        },
-        { status: 500 }
-      );
+      const errorResponse = { 
+        error: 'Missing API configuration',
+        details: { hasToken: !!apiToken, hasVenueId: !!venueId }
+      };
+      
+      // Log the error
+      await logApiCall(requestBody, errorResponse, 500, startTime, 'shipment-promise');
+      
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
     const baseURL = isDevelopment
       ? 'https://daas-public-api.development.dev.woltapi.com'
       : 'https://daas-public-api.wolt.com';
 
-    const response = await fetch(
-      `${baseURL}/v1/venues/${venueId}/shipment-promises`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      }
-    );
+    const woltApiUrl = `${baseURL}/v1/venues/${venueId}/shipment-promises`;
+    
+    const response = await fetch(woltApiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json(
-        { error: `Wolt API error: ${errorText}` },
-        { status: response.status }
-      );
+      const errorResponse = { error: `Wolt API error: ${errorText}` };
+      
+      // Log the error
+      await logApiCall(requestBody, errorResponse, response.status, startTime, 'shipment-promise');
+      
+      return NextResponse.json(errorResponse, { status: response.status });
     }
 
     const data = await response.json();
+    
+    // Log successful response
+    await logApiCall(requestBody, data, response.status, startTime, 'shipment-promise');
+    
     return NextResponse.json(data);
   } catch (error) {
     console.error('Shipment promise error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const errorResponse = { error: 'Internal server error' };
+    
+    // Log the error
+    await logApiCall(requestBody, errorResponse, 500, startTime, 'shipment-promise');
+    
+    return NextResponse.json(errorResponse, { status: 500 });
+  }
+}
+
+// Helper function to log API calls to client-accessible endpoint
+async function logApiCall(
+  requestBody: unknown,
+  responseBody: unknown,
+  status: number,
+  startTime: number,
+  type: 'shipment-promise'
+) {
+  try {
+    const logEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      type: type,
+      request: {
+        method: 'POST',
+        url: '/api/wolt/shipment-promises',
+        body: requestBody,
+      },
+      response: {
+        status: status,
+        body: responseBody,
+      },
+      duration: Date.now() - startTime,
+    };
+    
+    // Store in temporary global (will be replaced with proper storage)
+    if (typeof globalThis !== 'undefined') {
+      if (!globalThis.apiLogs) {
+        globalThis.apiLogs = [];
+      }
+      globalThis.apiLogs.unshift(logEntry);
+      // Keep only last 100 logs
+      if (globalThis.apiLogs.length > 100) {
+        globalThis.apiLogs = globalThis.apiLogs.slice(0, 100);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to log API call:', err);
   }
 }
