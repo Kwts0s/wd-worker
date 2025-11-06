@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useWoltDriveStore } from '@/store/wolt-store';
+import { useEnvConfig } from '@/hooks/use-env-config';
 import { initializeWoltClient } from '@/api/wolt-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 
 export function ConfigurationForm() {
   const { apiToken, merchantId, venueId, isDevelopment, setConfig, clearConfig } = useWoltDriveStore();
+  const { hasEnvConfig } = useEnvConfig();
   const [tempToken, setTempToken] = useState(apiToken || '');
   const [tempMerchantId, setTempMerchantId] = useState(merchantId || '');
   const [tempVenueId, setTempVenueId] = useState(venueId || '');
@@ -49,7 +51,10 @@ export function ConfigurationForm() {
           <div>
             <CardTitle>Wolt Drive Configuration</CardTitle>
             <CardDescription>
-              Configure your Wolt Drive API credentials
+              {hasEnvConfig ? 
+                'Configuration loaded from environment variables (.env.local)' : 
+                'Configure your Wolt Drive API credentials'
+              }
             </CardDescription>
           </div>
           {isConfigured && (
