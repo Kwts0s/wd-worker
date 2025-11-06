@@ -23,17 +23,17 @@
     },
     {
       "key": "WOLT_API_TOKEN",
-      "value": "",
+      "value": "O-qU_ikV8V8bwd4rifi72JShRfhwyhWlQ-ddCVd3t6M",
       "type": "string"
     },
     {
       "key": "merchant_id",
-      "value": "",
+      "value": "690cb58680cf5232db44e818",
       "type": "string"
     },
     {
       "key": "venue_id",
-      "value": "",
+      "value": "690cb5c48edd2cbbcccba2dd",
       "type": "string"
     }
   ],

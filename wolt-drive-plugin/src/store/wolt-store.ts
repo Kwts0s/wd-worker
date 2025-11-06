@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { DeliveryResponse, DeliveryStatus } from '@/types/wolt-drive';
+import { initializeWoltClient } from '@/api/wolt-client';
 
 interface WoltDriveState {
   // Configuration
@@ -36,102 +37,135 @@ interface WoltDriveState {
   getDeliveriesByStatus: (status: DeliveryStatus) => DeliveryResponse[];
 }
 
+// Helper function to get initial config from environment variables
+const getInitialConfig = () => {
+  const envToken = process.env.NEXT_PUBLIC_WOLT_API_TOKEN;
+  const envMerchantId = process.env.NEXT_PUBLIC_WOLT_MERCHANT_ID;
+  const envVenueId = process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
+  const envIsDevelopment = process.env.NEXT_PUBLIC_WOLT_IS_DEVELOPMENT === 'true';
+
+  return {
+    apiToken: envToken || null,
+    merchantId: envMerchantId || null,
+    venueId: envVenueId || null,
+    isDevelopment: envIsDevelopment ?? true,
+  };
+};
+
 export const useWoltDriveStore = create<WoltDriveState>()(
   devtools(
     persist(
-      (set, get) => ({
-        // Initial state
-        apiToken: null,
-        merchantId: null,
-        venueId: null,
-        isDevelopment: true,
-        deliveries: [],
-        selectedDelivery: null,
-        isLoading: false,
-        error: null,
+      (set, get) => {
+        const initialConfig = getInitialConfig();
+        
+        // Auto-initialize the Wolt client if all required environment variables are present
+        if (initialConfig.apiToken && initialConfig.merchantId && initialConfig.venueId) {
+          try {
+            initializeWoltClient(
+              initialConfig.apiToken,
+              initialConfig.merchantId,
+              initialConfig.venueId,
+              initialConfig.isDevelopment
+            );
+          } catch (error) {
+            console.warn('Failed to auto-initialize Wolt client from environment variables:', error);
+          }
+        }
+        
+        return {
+          // Initial state from environment variables
+          apiToken: initialConfig.apiToken,
+          merchantId: initialConfig.merchantId,
+          venueId: initialConfig.venueId,
+          isDevelopment: initialConfig.isDevelopment,
+          deliveries: [],
+          selectedDelivery: null,
+          isLoading: false,
+          error: null,
 
-        // Configuration actions
-        setConfig: (apiToken, merchantId, venueId, isDevelopment = true) => {
-          set({
-            apiToken,
-            merchantId,
-            venueId,
-            isDevelopment,
-          });
-        },
+          // Configuration actions
+          setConfig: (apiToken, merchantId, venueId, isDevelopment = true) => {
+            set({
+              apiToken,
+              merchantId,
+              venueId,
+              isDevelopment,
+            });
+          },
 
-        clearConfig: () => {
-          set({
-            apiToken: null,
-            merchantId: null,
-            venueId: null,
-            deliveries: [],
-            selectedDelivery: null,
-          });
-        },
+          clearConfig: () => {
+            set({
+              apiToken: null,
+              merchantId: null,
+              venueId: null,
+              deliveries: [],
+              selectedDelivery: null,
+            });
+          },
 
-        // Delivery actions
-        addDelivery: (delivery) => {
-          set((state) => ({
-            deliveries: [delivery, ...state.deliveries],
-          }));
-        },
+          // Delivery actions
+          addDelivery: (delivery) => {
+            set((state) => ({
+              deliveries: [delivery, ...state.deliveries],
+            }));
+          },
 
-        updateDelivery: (deliveryId, updates) => {
-          set((state) => ({
-            deliveries: state.deliveries.map((d) =>
-              d.id === deliveryId ? { ...d, ...updates } : d
-            ),
-            selectedDelivery:
-              state.selectedDelivery?.id === deliveryId
-                ? { ...state.selectedDelivery, ...updates }
-                : state.selectedDelivery,
-          }));
-        },
+          updateDelivery: (deliveryId, updates) => {
+            set((state) => ({
+              deliveries: state.deliveries.map((d) =>
+                d.id === deliveryId ? { ...d, ...updates } : d
+              ),
+              selectedDelivery:
+                state.selectedDelivery?.id === deliveryId
+                  ? { ...state.selectedDelivery, ...updates }
+                  : state.selectedDelivery,
+            }));
+          },
 
-        setDeliveries: (deliveries) => {
-          set({ deliveries });
-        },
+          setDeliveries: (deliveries) => {
+            set({ deliveries });
+          },
 
-        selectDelivery: (delivery) => {
-          set({ selectedDelivery: delivery });
-        },
+          selectDelivery: (delivery) => {
+            set({ selectedDelivery: delivery });
+          },
 
-        removeDelivery: (deliveryId) => {
-          set((state) => ({
-            deliveries: state.deliveries.filter((d) => d.id !== deliveryId),
-            selectedDelivery:
-              state.selectedDelivery?.id === deliveryId
-                ? null
-                : state.selectedDelivery,
-          }));
-        },
+          removeDelivery: (deliveryId) => {
+            set((state) => ({
+              deliveries: state.deliveries.filter((d) => d.id !== deliveryId),
+              selectedDelivery:
+                state.selectedDelivery?.id === deliveryId
+                  ? null
+                  : state.selectedDelivery,
+            }));
+          },
 
-        // UI state actions
-        setLoading: (isLoading) => {
-          set({ isLoading });
-        },
+          // UI state actions
+          setLoading: (isLoading) => {
+            set({ isLoading });
+          },
 
-        setError: (error) => {
-          set({ error });
-        },
+          setError: (error) => {
+            set({ error });
+          },
 
-        clearError: () => {
-          set({ error: null });
-        },
+          clearError: () => {
+            set({ error: null });
+          },
 
-        // Helper methods
-        getDeliveryById: (deliveryId) => {
-          return get().deliveries.find((d) => d.id === deliveryId);
-        },
+          // Helper methods
+          getDeliveryById: (deliveryId) => {
+            return get().deliveries.find((d) => d.id === deliveryId);
+          },
 
-        getDeliveriesByStatus: (status) => {
-          return get().deliveries.filter((d) => d.status === status);
-        },
-      }),
+          getDeliveriesByStatus: (status) => {
+            return get().deliveries.filter((d) => d.status === status);
+          },
+        };
+      },
       {
         name: 'wolt-drive-storage',
-        partialize: (state) => ({
+        partialize: (state: WoltDriveState) => ({
           apiToken: state.apiToken,
           merchantId: state.merchantId,
           venueId: state.venueId,
