@@ -118,6 +118,10 @@ export async function GET(request: NextRequest) {
 }
 
 // Helper function to log API calls
+// Note: Using global storage for simplicity. For production, consider using:
+// - Database storage (PostgreSQL, MongoDB, etc.)
+// - Redis for caching
+// - External logging service (Datadog, LogRocket, etc.)
 async function logApiCall(
   requestBody: unknown,
   responseBody: unknown,
@@ -127,7 +131,7 @@ async function logApiCall(
 ) {
   try {
     const logEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       timestamp: new Date().toISOString(),
       type: type,
       request: {
