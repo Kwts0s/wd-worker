@@ -35,10 +35,13 @@ export interface DeliveryContent {
   tags?: string[];
 }
 
-export interface Fee {
+export interface Price {
   amount: number;
   currency: string;
 }
+
+// Fee is an alias for Price for backward compatibility
+export type Fee = Price;
 
 export interface Tracking {
   url: string;
@@ -66,6 +69,80 @@ export type DeliveryStatus =
   | 'delivered'
   | 'cancelled';
 
+// Shipment Promise (Quote) Types
+export interface ShipmentPromiseRequest {
+  street: string;
+  city: string;
+  post_code: string;
+  lat: number;
+  lon: number;
+  language: string;
+  min_preparation_time_minutes: number;
+}
+
+export interface ShipmentPromiseResponse {
+  id: string;
+  fee?: Fee;
+  estimated_pickup_time?: string;
+  estimated_delivery_time?: string;
+  distance_meters?: number;
+}
+
+// Parcel/Package Types
+export interface ParcelDimensions {
+  weight_gram: number;
+  width_cm: number;
+  height_cm: number;
+  depth_cm: number;
+}
+
+export interface DropoffRestrictions {
+  id_check_required: boolean;
+}
+
+export interface Parcel {
+  count: number;
+  dimensions: ParcelDimensions;
+  price: Price;
+  description: string;
+  identifier: string;
+  dropoff_restrictions: DropoffRestrictions;
+}
+
+// Recipient Types
+export interface Recipient {
+  name: string;
+  phone_number: string;
+  email: string;
+}
+
+// Pickup/Dropoff Options
+export interface PickupOptions {
+  min_preparation_time_minutes: number;
+}
+
+export interface DropoffOptions {
+  is_no_contact: boolean;
+}
+
+// SMS Notifications
+export interface SmsNotifications {
+  received: string;
+  picked_up: string;
+}
+
+// Tips
+export interface Tip {
+  type: string;
+  price: Price;
+}
+
+// Handshake Delivery
+export interface HandshakeDelivery {
+  is_required: boolean;
+  should_send_sms_to_dropoff_contact: boolean;
+}
+
 // Request Types
 export interface DeliveryQuoteRequest {
   pickup: {
@@ -77,13 +154,27 @@ export interface DeliveryQuoteRequest {
 }
 
 export interface CreateDeliveryRequest {
-  pickup: LocationWithContact;
-  dropoff: LocationWithContact;
+  pickup: {
+    options: PickupOptions;
+    comment: string;
+  };
+  dropoff: {
+    location: {
+      coordinates: Coordinates;
+    };
+    comment: string;
+    options: DropoffOptions;
+  };
+  price: Price;
+  recipient: Recipient;
+  parcels: Parcel[];
+  shipment_promise_id: string;
   customer_support: CustomerSupport;
   merchant_order_reference_id: string;
-  is_no_contact_delivery: boolean;
-  contents: DeliveryContent[];
-  tips?: Record<string, unknown>[];
+  sms_notifications?: SmsNotifications;
+  tips?: Tip[];
+  order_number?: string;
+  handshake_delivery?: HandshakeDelivery;
 }
 
 export interface CancelDeliveryRequest {

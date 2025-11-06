@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getWoltClient } from '@/api/wolt-client';
 import {
   DeliveryQuoteRequest,
+  ShipmentPromiseRequest,
   CreateDeliveryRequest,
   CancelDeliveryRequest,
   DeliveryStatus,
@@ -14,7 +15,24 @@ export const queryKeys = {
   delivery: (id: string) => ['delivery', id] as const,
   tracking: (id: string) => ['tracking', id] as const,
   quote: ['quote'] as const,
+  shipmentPromise: ['shipmentPromise'] as const,
 };
+
+/**
+ * Hook to get a shipment promise (quote with promise ID)
+ */
+export function useShipmentPromise(request: ShipmentPromiseRequest | null) {
+  return useQuery({
+    queryKey: [...queryKeys.shipmentPromise, request],
+    queryFn: async () => {
+      if (!request) return null;
+      const client = getWoltClient();
+      return client.getShipmentPromise(request);
+    },
+    enabled: !!request,
+    staleTime: 60000, // 1 minute
+  });
+}
 
 /**
  * Hook to get a delivery quote

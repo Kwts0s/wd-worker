@@ -2,6 +2,8 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import {
   DeliveryQuoteRequest,
   DeliveryQuoteResponse,
+  ShipmentPromiseRequest,
+  ShipmentPromiseResponse,
   CreateDeliveryRequest,
   DeliveryResponse,
   ListDeliveriesResponse,
@@ -44,6 +46,20 @@ export class WoltDriveClient {
         throw error;
       }
     );
+  }
+
+  /**
+   * Get a shipment promise (quote with promise ID)
+   * This should be called FIRST before creating a delivery
+   */
+  async getShipmentPromise(
+    request: ShipmentPromiseRequest
+  ): Promise<ShipmentPromiseResponse> {
+    const response = await this.client.post<ShipmentPromiseResponse>(
+      `/v1/venues/${this.venueId}/shipment-promises`,
+      request
+    );
+    return response.data;
   }
 
   /**
