@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getWoltClient } from '@/api/wolt-client';
 import {
   DeliveryQuoteRequest,
   ShipmentPromiseRequest,
@@ -20,33 +19,55 @@ export const queryKeys = {
 
 /**
  * Hook to get a shipment promise (quote with promise ID)
+ * @deprecated Use useShipmentPromiseMutation instead
  */
 export function useShipmentPromise(request: ShipmentPromiseRequest | null) {
   return useQuery({
     queryKey: [...queryKeys.shipmentPromise, request],
     queryFn: async () => {
-      if (!request) return null;
-      const client = getWoltClient();
-      return client.getShipmentPromise(request);
+      throw new Error('This hook is deprecated. Use useShipmentPromiseMutation instead.');
     },
-    enabled: !!request,
+    enabled: false, // Disabled - use mutation instead
     staleTime: 60000, // 1 minute
   });
 }
 
 /**
  * Hook to get a delivery quote
+ * @deprecated Use useShipmentPromiseMutation for quotes with promise ID
  */
 export function useDeliveryQuote(request: DeliveryQuoteRequest | null) {
   return useQuery({
     queryKey: [...queryKeys.quote, request],
     queryFn: async () => {
-      if (!request) return null;
-      const client = getWoltClient();
-      return client.getDeliveryQuote(request);
+      throw new Error('This hook is deprecated. Use useShipmentPromiseMutation instead.');
     },
-    enabled: !!request,
+    enabled: false, // Disabled - use mutation instead
     staleTime: 60000, // 1 minute
+  });
+}
+
+/**
+ * Hook to get a shipment promise as a mutation (manual trigger)
+ */
+export function useShipmentPromiseMutation() {
+  return useMutation({
+    mutationFn: async (request: ShipmentPromiseRequest) => {
+      const response = await fetch('/api/wolt/shipment-promises', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get shipment promise');
+      }
+
+      return response.json();
+    },
   });
 }
 
@@ -59,8 +80,20 @@ export function useCreateDelivery() {
 
   return useMutation({
     mutationFn: async (request: CreateDeliveryRequest) => {
-      const client = getWoltClient();
-      return client.createDelivery(request);
+      const response = await fetch('/api/wolt/deliveries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create delivery');
+      }
+
+      return response.json();
     },
     onMutate: () => {
       setLoading(true);
@@ -80,25 +113,26 @@ export function useCreateDelivery() {
 
 /**
  * Hook to get a single delivery
+ * TODO: Implement API route for single delivery
  */
 export function useDelivery(deliveryId: string | null) {
-  const { updateDelivery } = useWoltDriveStore();
+  // const { updateDelivery } = useWoltDriveStore(); // TODO: Use when implemented
 
   const query = useQuery({
     queryKey: deliveryId ? queryKeys.delivery(deliveryId) : ['delivery-null'],
     queryFn: async () => {
       if (!deliveryId) return null;
-      const client = getWoltClient();
-      return client.getDelivery(deliveryId);
+      // TODO: Replace with API route call
+      throw new Error('Single delivery API not implemented yet');
     },
-    enabled: !!deliveryId,
+    enabled: false, // Disabled until API route is implemented
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Update store when data changes
-  if (query.data) {
-    updateDelivery(query.data.id, query.data);
-  }
+  // TODO: Update store when data changes (disabled until implemented)
+  // if (query.data) {
+  //   updateDelivery(query.data.id, query.data);
+  // }
 
   return query;
 }
@@ -116,8 +150,19 @@ export function useDeliveries(params?: {
   const query = useQuery({
     queryKey: [...queryKeys.deliveries, params],
     queryFn: async () => {
-      const client = getWoltClient();
-      return client.listDeliveries(params);
+      const searchParams = new URLSearchParams();
+      if (params?.limit) searchParams.append('limit', params.limit.toString());
+      if (params?.offset) searchParams.append('offset', params.offset.toString());
+      if (params?.status) searchParams.append('status', params.status);
+
+      const response = await fetch(`/api/wolt/deliveries?${searchParams.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch deliveries');
+      }
+
+      return response.json();
     },
     refetchInterval: 60000, // Refetch every minute
   });
@@ -132,21 +177,20 @@ export function useDeliveries(params?: {
 
 /**
  * Hook to cancel a delivery
+ * TODO: Implement API route for cancel delivery
  */
 export function useCancelDelivery() {
   const queryClient = useQueryClient();
   const { updateDelivery, setLoading, setError } = useWoltDriveStore();
 
   return useMutation({
-    mutationFn: async ({
-      deliveryId,
-      request,
-    }: {
+    mutationFn: async (params: {
       deliveryId: string;
       request: CancelDeliveryRequest;
     }) => {
-      const client = getWoltClient();
-      return client.cancelDelivery(deliveryId, request);
+      // TODO: Replace with API route call
+      console.log('Cancel delivery params:', params); // Temporary to avoid unused warning
+      throw new Error('Cancel delivery API not implemented yet');
     },
     onMutate: () => {
       setLoading(true);
@@ -169,16 +213,17 @@ export function useCancelDelivery() {
 
 /**
  * Hook to get tracking information
+ * TODO: Implement API route for tracking
  */
 export function useTracking(deliveryId: string | null) {
   return useQuery({
     queryKey: deliveryId ? queryKeys.tracking(deliveryId) : ['tracking-null'],
     queryFn: async () => {
       if (!deliveryId) return null;
-      const client = getWoltClient();
-      return client.getTracking(deliveryId);
+      // TODO: Replace with API route call
+      throw new Error('Tracking API not implemented yet');
     },
-    enabled: !!deliveryId,
+    enabled: false, // Disabled until API route is implemented
     refetchInterval: 15000, // Refetch every 15 seconds for real-time tracking
   });
 }

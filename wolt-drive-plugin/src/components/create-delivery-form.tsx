@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useCreateDelivery, useShipmentPromise } from '@/hooks/use-wolt-api';
+import { useCreateDelivery, useShipmentPromiseMutation } from '@/hooks/use-wolt-api';
 import { useWoltDriveStore } from '@/store/wolt-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,14 +11,11 @@ import { CreateDeliveryRequest, ShipmentPromiseRequest } from '@/types/wolt-driv
 export function CreateDeliveryForm() {
   const { apiToken, merchantId } = useWoltDriveStore();
   const createDelivery = useCreateDelivery();
+  const shipmentPromiseMutation = useShipmentPromiseMutation();
 
   // Generate order reference once on mount
   const [orderRef] = useState(() => `ORDER-${Date.now()}`);
   const [shipmentPromiseId, setShipmentPromiseId] = useState<string | null>(null);
-  const [quoteRequest, setQuoteRequest] = useState<ShipmentPromiseRequest | null>(null);
-
-  // Use the shipment promise hook
-  const shipmentPromise = useShipmentPromise(quoteRequest);
 
   const [formData, setFormData] = useState({
     // Dropoff location for quote
@@ -79,13 +76,13 @@ export function CreateDeliveryForm() {
       min_preparation_time_minutes: parseInt(formData.minPrepTime),
     };
 
-    setQuoteRequest(request);
+    try {
+      const result = await shipmentPromiseMutation.mutateAsync(request);
+      setShipmentPromiseId(result.id);
+    } catch (error) {
+      console.error('Failed to get shipment promise:', error);
+    }
   };
-
-  // When shipment promise is received, save the ID
-  if (shipmentPromise.data && !shipmentPromiseId) {
-    setShipmentPromiseId(shipmentPromise.data.id);
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +172,6 @@ export function CreateDeliveryForm() {
       alert('Delivery created successfully!');
       // Reset shipment promise for next order
       setShipmentPromiseId(null);
-      setQuoteRequest(null);
     } catch (error) {
       alert(`Failed to create delivery: ${error}`);
     }
@@ -270,24 +266,24 @@ export function CreateDeliveryForm() {
                 />
               </div>
             </div>
-            <Button type="submit" disabled={shipmentPromise.isPending} className="w-full">
-              {shipmentPromise.isPending ? 'Getting Quote...' : 'Get Quote'}
+            <Button type="submit" disabled={shipmentPromiseMutation.isPending} className="w-full">
+              {shipmentPromiseMutation.isPending ? 'Getting Quote...' : 'Get Quote'}
             </Button>
-            {shipmentPromise.data && (
+            {shipmentPromiseMutation.data && (
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm font-semibold text-green-700">Quote received!</p>
-                <p className="text-sm text-green-600">Shipment Promise ID: {shipmentPromise.data.id}</p>
-                {shipmentPromise.data.fee && (
+                <p className="text-sm text-green-600">Shipment Promise ID: {shipmentPromiseMutation.data.id}</p>
+                {shipmentPromiseMutation.data.fee && (
                   <p className="text-sm text-green-600">
-                    Fee: {shipmentPromise.data.fee.amount} {shipmentPromise.data.fee.currency}
+                    Fee: {shipmentPromiseMutation.data.fee.amount} {shipmentPromiseMutation.data.fee.currency}
                   </p>
                 )}
               </div>
             )}
-            {shipmentPromise.error && (
+            {shipmentPromiseMutation.error && (
               <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm font-semibold text-red-700">Error getting quote</p>
-                <p className="text-sm text-red-600">{String(shipmentPromise.error)}</p>
+                <p className="text-sm text-red-600">{String(shipmentPromiseMutation.error)}</p>
               </div>
             )}
           </div>
