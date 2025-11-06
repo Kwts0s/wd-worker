@@ -163,7 +163,7 @@ export function CreateDeliveryForm() {
           },
         },
       ],
-      order_number: 'string',
+      order_number: formData.orderReference, // Use order reference as order number
       handshake_delivery: {
         is_required: false,
         should_send_sms_to_dropoff_contact: true,

@@ -35,15 +35,13 @@ export interface DeliveryContent {
   tags?: string[];
 }
 
-export interface Fee {
-  amount: number;
-  currency: string;
-}
-
 export interface Price {
   amount: number;
   currency: string;
 }
+
+// Fee is an alias for Price for backward compatibility
+export type Fee = Price;
 
 export interface Tracking {
   url: string;
