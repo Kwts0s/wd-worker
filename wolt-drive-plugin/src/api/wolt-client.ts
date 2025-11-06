@@ -14,13 +14,15 @@ import {
 export class WoltDriveClient {
   private client: AxiosInstance;
   private merchantId: string;
+  private venueId: string;
 
-  constructor(apiToken: string, merchantId: string, isDevelopment = true) {
+  constructor(apiToken: string, merchantId: string, venueId: string, isDevelopment = true) {
     const baseURL = isDevelopment
       ? 'https://daas-public-api.development.dev.woltapi.com'
       : 'https://daas-public-api.wolt.com';
 
     this.merchantId = merchantId;
+    this.venueId = venueId;
     this.client = axios.create({
       baseURL,
       headers: {
@@ -51,7 +53,7 @@ export class WoltDriveClient {
     request: DeliveryQuoteRequest
   ): Promise<DeliveryQuoteResponse> {
     const response = await this.client.post<DeliveryQuoteResponse>(
-      `/merchants/${this.merchantId}/delivery-quote`,
+      `/merchants/${this.merchantId}/venues/${this.venueId}/delivery-quote`,
       request
     );
     return response.data;
@@ -64,7 +66,7 @@ export class WoltDriveClient {
     request: CreateDeliveryRequest
   ): Promise<DeliveryResponse> {
     const response = await this.client.post<DeliveryResponse>(
-      `/merchants/${this.merchantId}/deliveries`,
+      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries`,
       request
     );
     return response.data;
@@ -75,7 +77,7 @@ export class WoltDriveClient {
    */
   async getDelivery(deliveryId: string): Promise<DeliveryResponse> {
     const response = await this.client.get<DeliveryResponse>(
-      `/merchants/${this.merchantId}/deliveries/${deliveryId}`
+      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries/${deliveryId}`
     );
     return response.data;
   }
@@ -91,7 +93,7 @@ export class WoltDriveClient {
     created_before?: string;
   }): Promise<ListDeliveriesResponse> {
     const response = await this.client.get<ListDeliveriesResponse>(
-      `/merchants/${this.merchantId}/deliveries`,
+      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries`,
       { params }
     );
     return response.data;
@@ -105,7 +107,7 @@ export class WoltDriveClient {
     request: CancelDeliveryRequest
   ): Promise<CancelDeliveryResponse> {
     const response = await this.client.post<CancelDeliveryResponse>(
-      `/merchants/${this.merchantId}/deliveries/${deliveryId}/cancel`,
+      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries/${deliveryId}/cancel`,
       request
     );
     return response.data;
@@ -116,7 +118,7 @@ export class WoltDriveClient {
    */
   async getTracking(deliveryId: string): Promise<TrackingResponse> {
     const response = await this.client.get<TrackingResponse>(
-      `/merchants/${this.merchantId}/deliveries/${deliveryId}/tracking`
+      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries/${deliveryId}/tracking`
     );
     return response.data;
   }
@@ -128,9 +130,10 @@ let woltClient: WoltDriveClient | null = null;
 export function initializeWoltClient(
   apiToken: string,
   merchantId: string,
+  venueId: string,
   isDevelopment = true
 ): WoltDriveClient {
-  woltClient = new WoltDriveClient(apiToken, merchantId, isDevelopment);
+  woltClient = new WoltDriveClient(apiToken, merchantId, venueId, isDevelopment);
   return woltClient;
 }
 
