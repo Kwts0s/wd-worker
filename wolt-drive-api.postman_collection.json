@@ -61,8 +61,9 @@
                 "{{baseUrl}}"
               ],
               "path": [
-                "merchants",
-                "{{merchant_id}}",
+                "v1",
+                "venues",
+                "{{venue_id}}",
                 "deliveries"
               ]
             },
@@ -81,8 +82,9 @@
                 "{{baseUrl}}"
               ],
               "path": [
-                "merchants",
-                "{{merchant_id}}",
+                "v1",
+                "venues",
+                "{{venue_id}}",
                 "deliveries",
                 ":delivery_id"
               ],
@@ -108,8 +110,9 @@
                 "{{baseUrl}}"
               ],
               "path": [
-                "merchants",
-                "{{merchant_id}}",
+                "v1",
+                "venues",
+                "{{venue_id}}",
                 "deliveries"
               ],
               "query": [
@@ -155,8 +158,9 @@
                 "{{baseUrl}}"
               ],
               "path": [
-                "merchants",
-                "{{merchant_id}}",
+                "v1",
+                "venues",
+                "{{venue_id}}",
                 "deliveries",
                 ":delivery_id",
                 "cancel"
@@ -197,9 +201,10 @@
                 "{{baseUrl}}"
               ],
               "path": [
-                "merchants",
-                "{{merchant_id}}",
-                "delivery-quote"
+                "v1",
+                "venues",
+                "{{venue_id}}",
+                "shipment-promises"
               ]
             },
             "description": "Get a price quote and estimated delivery time before creating a delivery. This endpoint doesn't create a delivery."
@@ -222,8 +227,9 @@
                 "{{baseUrl}}"
               ],
               "path": [
-                "merchants",
-                "{{merchant_id}}",
+                "v1",
+                "venues",
+                "{{venue_id}}",
                 "deliveries",
                 ":delivery_id",
                 "tracking"
