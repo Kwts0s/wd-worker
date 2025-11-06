@@ -25,7 +25,7 @@ export function ConfigurationForm() {
       initializeWoltClient(tempToken, tempMerchantId, tempIsDev);
       setConfig(tempToken, tempMerchantId, tempIsDev);
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to initialize Wolt Drive client');
     }
   };

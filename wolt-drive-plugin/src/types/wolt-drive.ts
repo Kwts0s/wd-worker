@@ -83,7 +83,7 @@ export interface CreateDeliveryRequest {
   merchant_order_reference_id: string;
   is_no_contact_delivery: boolean;
   contents: DeliveryContent[];
-  tips?: any[];
+  tips?: Record<string, unknown>[];
 }
 
 export interface CancelDeliveryRequest {
@@ -158,7 +158,7 @@ export interface ApiError {
   error: {
     code: string;
     message: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
   };
 }
 
@@ -174,5 +174,5 @@ export interface WebhookEvent {
   delivery_id: string;
   timestamp: string;
   merchant_id: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }

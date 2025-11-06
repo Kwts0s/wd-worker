@@ -12,6 +12,9 @@ export function CreateDeliveryForm() {
   const { apiToken, merchantId } = useWoltDriveStore();
   const createDelivery = useCreateDelivery();
 
+  // Generate order reference once on mount
+  const [orderRef] = useState(() => `ORDER-${Date.now()}`);
+
   const [formData, setFormData] = useState({
     // Pickup
     pickupAddress: 'Aleksanterinkatu 21, 00100 Helsinki, Finland',
@@ -31,7 +34,7 @@ export function CreateDeliveryForm() {
     sendSMS: true,
 
     // Order details
-    orderReference: `ORDER-${Date.now()}`,
+    orderReference: orderRef,
     noContact: false,
 
     // Items
