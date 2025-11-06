@@ -1,0 +1,232 @@
+{
+  "info": {
+    "name": "Wolt Drive API",
+    "description": "Complete Postman collection for Wolt Drive Delivery API. This collection covers all main endpoints for creating, tracking, and managing deliveries.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "wolt-drive-v1"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{WOLT_API_TOKEN}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://daas-public-api.development.dev.woltapi.com",
+      "type": "string"
+    },
+    {
+      "key": "WOLT_API_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "merchant_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Deliveries",
+      "item": [
+        {
+          "name": "Create Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup\": {\n    \"location\": {\n      \"formatted_address\": \"Aleksanterinkatu 21, 00100 Helsinki, Finland\",\n      \"coordinates\": {\n        \"lat\": 60.168992,\n        \"lon\": 24.942590\n      }\n    },\n    \"comment\": \"Please ring the doorbell\",\n    \"contact_details\": {\n      \"name\": \"Store Manager\",\n      \"phone_number\": \"+358401234567\",\n      \"send_tracking_link_sms\": false\n    }\n  },\n  \"dropoff\": {\n    \"location\": {\n      \"formatted_address\": \"Mannerheimintie 12, 00100 Helsinki, Finland\",\n      \"coordinates\": {\n        \"lat\": 60.169857,\n        \"lon\": 24.938379\n      }\n    },\n    \"comment\": \"Leave at door\",\n    \"contact_details\": {\n      \"name\": \"John Doe\",\n      \"phone_number\": \"+358409876543\",\n      \"send_tracking_link_sms\": true\n    }\n  },\n  \"customer_support\": {\n    \"email\": \"support@example.com\",\n    \"phone_number\": \"+358401234567\",\n    \"url\": \"https://example.com/support\"\n  },\n  \"merchant_order_reference_id\": \"ORDER-12345\",\n  \"is_no_contact_delivery\": false,\n  \"contents\": [\n    {\n      \"count\": 2,\n      \"description\": \"Pizza Margherita\",\n      \"identifier\": \"PIZZA-001\",\n      \"tags\": [\"food\"]\n    }\n  ],\n  \"tips\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants", "{{merchant_id}}", "deliveries"]
+            },
+            "description": "Create a new delivery order. This is the main endpoint to request a delivery from Wolt Drive."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Delivery",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries/:delivery_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants", "{{merchant_id}}", "deliveries", ":delivery_id"],
+              "variable": [
+                {
+                  "key": "delivery_id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Get details of a specific delivery by its ID. Returns current status, tracking info, and all delivery details."
+          },
+          "response": []
+        },
+        {
+          "name": "List Deliveries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants", "{{merchant_id}}", "deliveries"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of deliveries to return (max 100)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Pagination offset"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by status: pending, scheduled, picking_up, in_transit, delivered, cancelled",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all deliveries for the merchant. Supports filtering and pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Customer requested cancellation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries/:delivery_id/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants", "{{merchant_id}}", "deliveries", ":delivery_id", "cancel"],
+              "variable": [
+                {
+                  "key": "delivery_id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Cancel a delivery. Can only cancel deliveries in certain states (before pickup or early in delivery)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Quotes",
+      "item": [
+        {
+          "name": "Get Delivery Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup\": {\n    \"location\": {\n      \"formatted_address\": \"Aleksanterinkatu 21, 00100 Helsinki, Finland\",\n      \"coordinates\": {\n        \"lat\": 60.168992,\n        \"lon\": 24.942590\n      }\n    }\n  },\n  \"dropoff\": {\n    \"location\": {\n      \"formatted_address\": \"Mannerheimintie 12, 00100 Helsinki, Finland\",\n      \"coordinates\": {\n        \"lat\": 60.169857,\n        \"lon\": 24.938379\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/delivery-quote",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants", "{{merchant_id}}", "delivery-quote"]
+            },
+            "description": "Get a price quote and estimated delivery time before creating a delivery. This endpoint doesn't create a delivery."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tracking",
+      "item": [
+        {
+          "name": "Get Tracking Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries/:delivery_id/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants", "{{merchant_id}}", "deliveries", ":delivery_id", "tracking"],
+              "variable": [
+                {
+                  "key": "delivery_id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Get real-time tracking information for a delivery, including courier location and ETA."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Webhook - Delivery Status Changed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Wolt-Signature",
+                "value": "{{webhook_signature}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"delivery.status_changed\",\n  \"delivery_id\": \"delivery-uuid-here\",\n  \"status\": \"in_transit\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"merchant_id\": \"merchant-uuid\",\n  \"data\": {\n    \"previous_status\": \"picking_up\",\n    \"new_status\": \"in_transit\",\n    \"courier\": {\n      \"name\": \"Courier Name\",\n      \"phone\": \"+358401234567\"\n    },\n    \"eta\": \"2024-01-15T11:00:00Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://your-webhook-endpoint.com/wolt-webhook",
+              "protocol": "https",
+              "host": ["your-webhook-endpoint", "com"],
+              "path": ["wolt-webhook"]
+            },
+            "description": "Example webhook payload that Wolt sends when delivery status changes. Configure webhook URL in Wolt merchant dashboard."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
