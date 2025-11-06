@@ -30,6 +30,11 @@
       "key": "merchant_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "venue_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -51,9 +56,15 @@
               "raw": "{\n  \"pickup\": {\n    \"location\": {\n      \"formatted_address\": \"Aleksanterinkatu 21, 00100 Helsinki, Finland\",\n      \"coordinates\": {\n        \"lat\": 60.168992,\n        \"lon\": 24.942590\n      }\n    },\n    \"comment\": \"Please ring the doorbell\",\n    \"contact_details\": {\n      \"name\": \"Store Manager\",\n      \"phone_number\": \"+358401234567\",\n      \"send_tracking_link_sms\": false\n    }\n  },\n  \"dropoff\": {\n    \"location\": {\n      \"formatted_address\": \"Mannerheimintie 12, 00100 Helsinki, Finland\",\n      \"coordinates\": {\n        \"lat\": 60.169857,\n        \"lon\": 24.938379\n      }\n    },\n    \"comment\": \"Leave at door\",\n    \"contact_details\": {\n      \"name\": \"John Doe\",\n      \"phone_number\": \"+358409876543\",\n      \"send_tracking_link_sms\": true\n    }\n  },\n  \"customer_support\": {\n    \"email\": \"support@example.com\",\n    \"phone_number\": \"+358401234567\",\n    \"url\": \"https://example.com/support\"\n  },\n  \"merchant_order_reference_id\": \"ORDER-12345\",\n  \"is_no_contact_delivery\": false,\n  \"contents\": [\n    {\n      \"count\": 2,\n      \"description\": \"Pizza Margherita\",\n      \"identifier\": \"PIZZA-001\",\n      \"tags\": [\"food\"]\n    }\n  ],\n  \"tips\": []\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchants", "{{merchant_id}}", "deliveries"]
+              "raw": "{{baseUrl}}/v1/venues/{{venue_id}}/deliveries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "merchants",
+                "{{merchant_id}}",
+                "deliveries"
+              ]
             },
             "description": "Create a new delivery order. This is the main endpoint to request a delivery from Wolt Drive."
           },
@@ -65,9 +76,16 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries/:delivery_id",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchants", "{{merchant_id}}", "deliveries", ":delivery_id"],
+              "raw": "{{baseUrl}}/v1/venues/{{venue_id}}/deliveries/:delivery_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "merchants",
+                "{{merchant_id}}",
+                "deliveries",
+                ":delivery_id"
+              ],
               "variable": [
                 {
                   "key": "delivery_id",
@@ -85,9 +103,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries?limit=20&offset=0",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchants", "{{merchant_id}}", "deliveries"],
+              "raw": "{{baseUrl}}/v1/venues/{{venue_id}}/deliveries?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "merchants",
+                "{{merchant_id}}",
+                "deliveries"
+              ],
               "query": [
                 {
                   "key": "limit",
@@ -126,9 +150,17 @@
               "raw": "{\n  \"reason\": \"Customer requested cancellation\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries/:delivery_id/cancel",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchants", "{{merchant_id}}", "deliveries", ":delivery_id", "cancel"],
+              "raw": "{{baseUrl}}/v1/venues/{{venue_id}}/deliveries/:delivery_id/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "merchants",
+                "{{merchant_id}}",
+                "deliveries",
+                ":delivery_id",
+                "cancel"
+              ],
               "variable": [
                 {
                   "key": "delivery_id",
@@ -160,9 +192,15 @@
               "raw": "{\n  \"pickup\": {\n    \"location\": {\n      \"formatted_address\": \"Aleksanterinkatu 21, 00100 Helsinki, Finland\",\n      \"coordinates\": {\n        \"lat\": 60.168992,\n        \"lon\": 24.942590\n      }\n    }\n  },\n  \"dropoff\": {\n    \"location\": {\n      \"formatted_address\": \"Mannerheimintie 12, 00100 Helsinki, Finland\",\n      \"coordinates\": {\n        \"lat\": 60.169857,\n        \"lon\": 24.938379\n      }\n    }\n  }\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/delivery-quote",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchants", "{{merchant_id}}", "delivery-quote"]
+              "raw": "{{baseUrl}}/v1/venues/{{venue_id}}/shipment-promises",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "merchants",
+                "{{merchant_id}}",
+                "delivery-quote"
+              ]
             },
             "description": "Get a price quote and estimated delivery time before creating a delivery. This endpoint doesn't create a delivery."
           },
@@ -179,9 +217,17 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/merchants/{{merchant_id}}/deliveries/:delivery_id/tracking",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchants", "{{merchant_id}}", "deliveries", ":delivery_id", "tracking"],
+              "raw": "{{baseUrl}}/v1/venues/{{venue_id}}/deliveries/:delivery_id/tracking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "merchants",
+                "{{merchant_id}}",
+                "deliveries",
+                ":delivery_id",
+                "tracking"
+              ],
               "variable": [
                 {
                   "key": "delivery_id",
@@ -219,8 +265,13 @@
             "url": {
               "raw": "https://your-webhook-endpoint.com/wolt-webhook",
               "protocol": "https",
-              "host": ["your-webhook-endpoint", "com"],
-              "path": ["wolt-webhook"]
+              "host": [
+                "your-webhook-endpoint",
+                "com"
+              ],
+              "path": [
+                "wolt-webhook"
+              ]
             },
             "description": "Example webhook payload that Wolt sends when delivery status changes. Configure webhook URL in Wolt merchant dashboard."
           },

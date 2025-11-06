@@ -47,13 +47,13 @@ export class WoltDriveClient {
   }
 
   /**
-   * Get a delivery quote
+   * Get a delivery quote (shipment promise)
    */
   async getDeliveryQuote(
     request: DeliveryQuoteRequest
   ): Promise<DeliveryQuoteResponse> {
     const response = await this.client.post<DeliveryQuoteResponse>(
-      `/merchants/${this.merchantId}/venues/${this.venueId}/delivery-quote`,
+      `/v1/venues/${this.venueId}/shipment-promises`,
       request
     );
     return response.data;
@@ -66,7 +66,7 @@ export class WoltDriveClient {
     request: CreateDeliveryRequest
   ): Promise<DeliveryResponse> {
     const response = await this.client.post<DeliveryResponse>(
-      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries`,
+      `/v1/venues/${this.venueId}/deliveries`,
       request
     );
     return response.data;
@@ -77,7 +77,7 @@ export class WoltDriveClient {
    */
   async getDelivery(deliveryId: string): Promise<DeliveryResponse> {
     const response = await this.client.get<DeliveryResponse>(
-      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries/${deliveryId}`
+      `/v1/venues/${this.venueId}/deliveries/${deliveryId}`
     );
     return response.data;
   }
@@ -93,7 +93,7 @@ export class WoltDriveClient {
     created_before?: string;
   }): Promise<ListDeliveriesResponse> {
     const response = await this.client.get<ListDeliveriesResponse>(
-      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries`,
+      `/v1/venues/${this.venueId}/deliveries`,
       { params }
     );
     return response.data;
@@ -107,7 +107,7 @@ export class WoltDriveClient {
     request: CancelDeliveryRequest
   ): Promise<CancelDeliveryResponse> {
     const response = await this.client.post<CancelDeliveryResponse>(
-      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries/${deliveryId}/cancel`,
+      `/v1/venues/${this.venueId}/deliveries/${deliveryId}/cancel`,
       request
     );
     return response.data;
@@ -118,7 +118,7 @@ export class WoltDriveClient {
    */
   async getTracking(deliveryId: string): Promise<TrackingResponse> {
     const response = await this.client.get<TrackingResponse>(
-      `/merchants/${this.merchantId}/venues/${this.venueId}/deliveries/${deliveryId}/tracking`
+      `/v1/venues/${this.venueId}/deliveries/${deliveryId}/tracking`
     );
     return response.data;
   }

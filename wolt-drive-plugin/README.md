@@ -29,7 +29,7 @@ A complete delivery integration plugin for e-commerce platforms using the Wolt D
 ## 📋 Prerequisites
 
 - Node.js 18+ and npm
-- Wolt Drive API credentials (API Token and Merchant ID)
+- Wolt Drive API credentials (API Token, Merchant ID, and Venue ID)
 - Basic understanding of React and Next.js
 
 ## 🛠️ Installation
@@ -44,6 +44,7 @@ Create a `.env.local` file:
 ```env
 NEXT_PUBLIC_WOLT_API_TOKEN=your_api_token_here
 NEXT_PUBLIC_WOLT_MERCHANT_ID=your_merchant_id_here
+NEXT_PUBLIC_WOLT_VENUE_ID=your_venue_id_here
 NEXT_PUBLIC_WOLT_IS_DEVELOPMENT=true
 ```
 
@@ -63,6 +64,7 @@ First, configure your Wolt Drive API credentials:
 - Go to the "Configuration" tab
 - Enter your API Token
 - Enter your Merchant ID
+- Enter your Venue ID
 - Choose Development or Production environment
 - Click "Save Configuration"
 

@@ -28,6 +28,7 @@ The simplest approach - deploy the Next.js application:
    ```env
    NEXT_PUBLIC_WOLT_API_TOKEN=your_token
    NEXT_PUBLIC_WOLT_MERCHANT_ID=your_merchant_id
+   NEXT_PUBLIC_WOLT_VENUE_ID=your_venue_id
    NEXT_PUBLIC_WOLT_IS_DEVELOPMENT=false
    ```
 
@@ -91,6 +92,7 @@ Import React components into your existing Next.js/React application:
    initializeWoltClient(
      process.env.NEXT_PUBLIC_WOLT_API_TOKEN!,
      process.env.NEXT_PUBLIC_WOLT_MERCHANT_ID!,
+     process.env.NEXT_PUBLIC_WOLT_VENUE_ID!,
      process.env.NODE_ENV === 'development'
    );
    ```
@@ -144,6 +146,7 @@ Use the Wolt Drive client in your backend or Node.js application:
    const client = new WoltDriveClient(
      process.env.WOLT_API_TOKEN,
      process.env.WOLT_MERCHANT_ID,
+     process.env.WOLT_VENUE_ID,
      false // production
    );
    

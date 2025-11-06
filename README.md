@@ -15,7 +15,7 @@ This repository contains everything you need to integrate Wolt Drive delivery se
 ### Postman Collection
 
 Import `wolt-drive-api.postman_collection.json` into Postman:
-- Configure your API token and merchant ID
+- Configure your API token, merchant ID, and venue ID
 - Test all endpoints interactively
 - See example requests and responses
 
@@ -70,6 +70,7 @@ Visit http://localhost:3000 to access the web interface.
 You'll need:
 - Wolt Drive API Token
 - Wolt Drive Merchant ID
+- Wolt Drive Venue ID
 
 Get these from your [Wolt Drive merchant dashboard](https://merchant.wolt.com).
 
