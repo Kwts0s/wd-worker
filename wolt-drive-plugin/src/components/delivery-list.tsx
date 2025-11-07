@@ -77,10 +77,10 @@ function DeliveryCard({ delivery, onSelect }: DeliveryCardProps) {
 }
 
 export function DeliveryList() {
-  const { apiToken, merchantId, selectDelivery } = useWoltDriveStore();
+  const { apiToken, merchantId, venueId, selectDelivery } = useWoltDriveStore();
   const { data, isLoading, error, refetch } = useDeliveries({ limit: 20 });
 
-  if (!apiToken || !merchantId) {
+  if (!apiToken || !merchantId || !venueId) {
     return (
       <Card>
         <CardHeader>
