@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CreateDeliveryRequest, ShipmentPromiseRequest } from '@/types/wolt-drive';
 
 export function CreateDeliveryForm() {
-  const { apiToken, merchantId } = useWoltDriveStore();
+  const { apiToken, merchantId, venueId } = useWoltDriveStore();
   const createDelivery = useCreateDelivery();
   const shipmentPromiseMutation = useShipmentPromiseMutation();
 
@@ -199,7 +199,7 @@ export function CreateDeliveryForm() {
     }
   };
 
-  if (!apiToken || !merchantId) {
+  if (!apiToken || !merchantId || !venueId) {
     return (
       <Card>
         <CardHeader>
@@ -350,6 +350,34 @@ export function CreateDeliveryForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4 border-2 border-green-200 p-4 rounded-lg">
             <h3 className="text-lg font-semibold text-green-700">Step 2: Create Delivery Order</h3>
+            
+            {/* Shipment Promise ID Section */}
+            {shipmentPromiseId && (
+              <div className="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-800">Quote Information</h4>
+                <div>
+                  <label className="text-sm font-medium text-blue-700">Shipment Promise ID</label>
+                  <Input
+                    value={shipmentPromiseId}
+                    readOnly
+                    className="bg-blue-100 text-blue-900 font-mono cursor-not-allowed"
+                  />
+                  <p className="text-xs text-blue-600 mt-1">
+                    This ID links your delivery to the quote received in Step 1
+                  </p>
+                </div>
+                {scheduledDropoffTime && (
+                  <div>
+                    <label className="text-sm font-medium text-blue-700">Scheduled Dropoff Time</label>
+                    <Input
+                      value={scheduledDropoffTime}
+                      readOnly
+                      className="bg-blue-100 text-blue-900 font-mono cursor-not-allowed"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             
             {/* Pickup Section */}
             <div className="space-y-4">

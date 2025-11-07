@@ -10,10 +10,10 @@ export async function POST(request: NextRequest) {
 
     // Use server-side environment variables, fallback to public ones
     const apiToken = process.env.WOLT_API_TOKEN || process.env.NEXT_PUBLIC_WOLT_API_TOKEN;
-    const merchantId = process.env.WOLT_MERCHANT_ID || process.env.NEXT_PUBLIC_WOLT_MERCHANT_ID;
+    const venueId = process.env.WOLT_VENUE_ID || process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
     const isDevelopment = (process.env.WOLT_IS_DEVELOPMENT || process.env.NEXT_PUBLIC_WOLT_IS_DEVELOPMENT) === 'true';
 
-    if (!apiToken || !merchantId) {
+    if (!apiToken || !venueId) {
       const errorResponse = { error: 'Missing API configuration' };
       await logApiCall(requestBody, errorResponse, 500, startTime, 'create-delivery');
       return NextResponse.json(errorResponse, { status: 500 });
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       : 'https://daas-public-api.wolt.com';
 
     const response = await fetch(
-      `${baseURL}/v1/merchants/${merchantId}/deliveries`,
+      `${baseURL}/v1/venues/${venueId}/deliveries`,
       {
         method: 'POST',
         headers: {
@@ -63,10 +63,10 @@ export async function GET(request: NextRequest) {
 
     // Use server-side environment variables, fallback to public ones
     const apiToken = process.env.WOLT_API_TOKEN || process.env.NEXT_PUBLIC_WOLT_API_TOKEN;
-    const merchantId = process.env.WOLT_MERCHANT_ID || process.env.NEXT_PUBLIC_WOLT_MERCHANT_ID;
+    const venueId = process.env.WOLT_VENUE_ID || process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
     const isDevelopment = (process.env.WOLT_IS_DEVELOPMENT || process.env.NEXT_PUBLIC_WOLT_IS_DEVELOPMENT) === 'true';
 
-    if (!apiToken || !merchantId) {
+    if (!apiToken || !venueId) {
       const errorResponse = { error: 'Missing API configuration' };
       await logApiCall(
         { limit, offset },
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       : 'https://daas-public-api.wolt.com';
 
     const response = await fetch(
-      `${baseURL}/v1/merchants/${merchantId}/deliveries?limit=${limit}&offset=${offset}`,
+      `${baseURL}/v1/venues/${venueId}/deliveries?limit=${limit}&offset=${offset}`,
       {
         method: 'GET',
         headers: {
