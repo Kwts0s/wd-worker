@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { DeliveryResponse, DeliveryStatus } from '@/types/wolt-drive';
 import { useRouter } from 'next/navigation';
+import { getDeliveryDisplayName } from '@/lib/delivery-utils';
 
 function getStatusColor(status: DeliveryStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
   switch (status) {
@@ -37,7 +38,7 @@ function DeliveryCard({ delivery, onSelect }: DeliveryCardProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <CardTitle className="text-base">
-              {delivery.merchant_order_reference_id || delivery.order_number || delivery.id.slice(0, 8)}
+              {getDeliveryDisplayName(delivery)}
             </CardTitle>
             <CardDescription className="text-xs">
               Created: {formatDate(delivery.created_at)}

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeliveryStatus } from '@/types/wolt-drive';
+import { getDeliveryDisplayName } from '@/lib/delivery-utils';
 import { 
   Package, 
   MapPin, 
@@ -97,7 +98,7 @@ export default function DeliveryDetailPage() {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {delivery.order_number || delivery.merchant_order_reference_id}
+                  {getDeliveryDisplayName(delivery)}
                 </h1>
                 <p className="text-sm text-gray-500">Delivery ID: {delivery.id}</p>
               </div>
@@ -304,7 +305,7 @@ export default function DeliveryDetailPage() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Website</p>
                   <a 
-                    href={`https://${delivery.customer_support.url}`} 
+                    href={delivery.customer_support.url.startsWith('http') ? delivery.customer_support.url : `https://${delivery.customer_support.url}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:underline flex items-center"

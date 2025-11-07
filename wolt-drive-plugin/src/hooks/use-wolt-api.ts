@@ -141,15 +141,13 @@ export function useDelivery(deliveryId: string | null) {
  * Hook to list deliveries
  * @deprecated Wolt venueful API doesn't support listing deliveries. Use Zustand store instead.
  */
-export function useDeliveries(params?: {
+export function useDeliveries(_params?: {
   limit?: number;
   offset?: number;
   status?: DeliveryStatus;
 }) {
-  console.log('useDeliveries called with params:', params); // Avoid unused warning
-  
   return useQuery({
-    queryKey: [...queryKeys.deliveries, params],
+    queryKey: [...queryKeys.deliveries, _params],
     queryFn: async () => {
       throw new Error('List deliveries API not available for venueful endpoints. Use Zustand store instead.');
     },
