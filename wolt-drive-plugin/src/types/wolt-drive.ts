@@ -60,6 +60,7 @@ export interface TimelineEvent {
 }
 
 export type DeliveryStatus =
+  | 'INFO_RECEIVED'
   | 'created'
   | 'scheduled'
   | 'courier_assigned'
@@ -108,6 +109,7 @@ export interface Parcel {
   description: string;
   identifier: string;
   dropoff_restrictions: DropoffRestrictions;
+  tags?: string[];
 }
 
 // Recipient Types
@@ -192,21 +194,48 @@ export interface DeliveryQuoteResponse {
   distance_meters: number;
 }
 
+// Actual API Response structure (venueful endpoints)
 export interface DeliveryResponse {
   id: string;
   status: DeliveryStatus;
-  tracking: Tracking;
-  created_at: string;
-  fee: Fee;
-  estimated_pickup_time: string;
-  estimated_delivery_time: string;
-  pickup: LocationWithContact;
-  dropoff: LocationWithContact;
+  tracking: {
+    id: string;
+    url: string;
+  };
+  tracking_sms: string | null;
+  pickup: {
+    location: Location;
+    comment: string;
+    options: {
+      min_preparation_time_minutes: number;
+      scheduled_time?: string;
+    };
+    eta: string;
+    display_name: string;
+  };
+  dropoff: {
+    location: Location;
+    comment: string;
+    options: {
+      is_no_contact: boolean;
+      scheduled_time?: string;
+    };
+    eta: string | null;
+  };
+  price: Price;
+  recipient: Recipient;
+  parcels: Parcel[];
+  customer_support: CustomerSupport;
+  wolt_order_reference_id: string;
+  merchant_order_reference_id: string;
+  tips: Tip[];
+  order_number: string;
   courier?: Courier;
   timeline?: TimelineEvent[];
   actual_pickup_time?: string;
   actual_delivery_time?: string;
-  merchant_order_reference_id?: string;
+  created_at?: string;
+  fee?: Fee;
 }
 
 export interface ListDeliveriesResponse {

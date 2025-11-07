@@ -53,69 +53,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
-  const startTime = Date.now();
-  
-  try {
-    const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') || '20';
-    const offset = searchParams.get('offset') || '0';
-
-    // Use server-side environment variables, fallback to public ones
-    const apiToken = process.env.WOLT_API_TOKEN || process.env.NEXT_PUBLIC_WOLT_API_TOKEN;
-    const venueId = process.env.WOLT_VENUE_ID || process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
-    const isDevelopment = (process.env.WOLT_IS_DEVELOPMENT || process.env.NEXT_PUBLIC_WOLT_IS_DEVELOPMENT) === 'true';
-
-    if (!apiToken || !venueId) {
-      const errorResponse = { error: 'Missing API configuration' };
-      await logApiCall(
-        { limit, offset },
-        errorResponse,
-        500,
-        startTime,
-        'list-deliveries'
-      );
-      return NextResponse.json(errorResponse, { status: 500 });
-    }
-
-    const baseURL = isDevelopment
-      ? 'https://daas-public-api.development.dev.woltapi.com'
-      : 'https://daas-public-api.wolt.com';
-
-    const response = await fetch(
-      `${baseURL}/v1/venues/${venueId}/deliveries?limit=${limit}&offset=${offset}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      const errorResponse = { error: `Wolt API error: ${errorText}` };
-      await logApiCall(
-        { limit, offset },
-        errorResponse,
-        response.status,
-        startTime,
-        'list-deliveries'
-      );
-      return NextResponse.json(errorResponse, { status: response.status });
-    }
-
-    const data = await response.json();
-    await logApiCall({ limit, offset }, data, response.status, startTime, 'list-deliveries');
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('List deliveries error:', error);
-    const errorResponse = { error: 'Internal server error' };
-    await logApiCall(null, errorResponse, 500, startTime, 'list-deliveries');
-    return NextResponse.json(errorResponse, { status: 500 });
-  }
-}
+// GET endpoint removed - Wolt API venueful endpoints don't support listing deliveries
+// Instead, deliveries are stored locally in Zustand store when created
 
 // Helper function to log API calls
 // Note: Using global storage for simplicity. For production, consider using:

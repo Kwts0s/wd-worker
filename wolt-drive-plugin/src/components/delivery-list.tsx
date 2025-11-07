@@ -1,11 +1,10 @@
 'use client';
 
-import { useDeliveries } from '@/hooks/use-wolt-api';
 import { useWoltDriveStore } from '@/store/wolt-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { DeliveryResponse, DeliveryStatus } from '@/types/wolt-drive';
+import { useRouter } from 'next/navigation';
 
 function getStatusColor(status: DeliveryStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
   switch (status) {
@@ -21,7 +20,8 @@ function getStatusColor(status: DeliveryStatus): 'default' | 'secondary' | 'dest
   }
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString?: string): string {
+  if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleString();
 }
 
@@ -37,7 +37,7 @@ function DeliveryCard({ delivery, onSelect }: DeliveryCardProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <CardTitle className="text-base">
-              {delivery.merchant_order_reference_id || delivery.id.slice(0, 8)}
+              {delivery.merchant_order_reference_id || delivery.order_number || delivery.id.slice(0, 8)}
             </CardTitle>
             <CardDescription className="text-xs">
               Created: {formatDate(delivery.created_at)}
@@ -59,9 +59,9 @@ function DeliveryCard({ delivery, onSelect }: DeliveryCardProps) {
         </div>
         <div className="flex items-center justify-between pt-2">
           <div>
-            <p className="font-medium text-xs text-muted-foreground">Fee</p>
+            <p className="font-medium text-xs text-muted-foreground">Price</p>
             <p className="text-sm font-semibold">
-              {(delivery.fee.amount / 100).toFixed(2)} {delivery.fee.currency}
+              {(delivery.price.amount / 100).toFixed(2)} {delivery.price.currency}
             </p>
           </div>
           {delivery.courier && (
@@ -77,8 +77,8 @@ function DeliveryCard({ delivery, onSelect }: DeliveryCardProps) {
 }
 
 export function DeliveryList() {
-  const { apiToken, merchantId, venueId, selectDelivery } = useWoltDriveStore();
-  const { data, isLoading, error, refetch } = useDeliveries({ limit: 20 });
+  const { apiToken, merchantId, venueId, deliveries, selectDelivery } = useWoltDriveStore();
+  const router = useRouter();
 
   if (!apiToken || !merchantId || !venueId) {
     return (
@@ -93,36 +93,10 @@ export function DeliveryList() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Deliveries</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Loading deliveries...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Deliveries</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-red-500">Error loading deliveries: {String(error)}</p>
-          <Button onClick={() => refetch()} variant="outline" className="mt-4">
-            Retry
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const deliveries: DeliveryResponse[] = data?.deliveries || [];
+  const handleSelectDelivery = (delivery: DeliveryResponse) => {
+    selectDelivery(delivery);
+    router.push(`/delivery/${delivery.id}`);
+  };
 
   return (
     <div className="space-y-4">
@@ -130,12 +104,9 @@ export function DeliveryList() {
         <div>
           <h2 className="text-2xl font-bold">Deliveries</h2>
           <p className="text-sm text-muted-foreground">
-            {deliveries.length} deliveries found
+            {deliveries.length} {deliveries.length === 1 ? 'delivery' : 'deliveries'} in this session
           </p>
         </div>
-        <Button onClick={() => refetch()} variant="outline">
-          Refresh
-        </Button>
       </div>
 
       {deliveries.length === 0 ? (
@@ -152,7 +123,7 @@ export function DeliveryList() {
             <DeliveryCard
               key={delivery.id}
               delivery={delivery}
-              onSelect={() => selectDelivery(delivery)}
+              onSelect={() => handleSelectDelivery(delivery)}
             />
           ))}
         </div>
