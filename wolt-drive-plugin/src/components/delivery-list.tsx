@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { DeliveryResponse, DeliveryStatus } from '@/types/wolt-drive';
 import { useRouter } from 'next/navigation';
 import { getDeliveryDisplayName } from '@/lib/delivery-utils';
+import { ArrowUpDown } from 'lucide-react';
 
 function getStatusColor(status: DeliveryStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
   switch (status) {
@@ -21,60 +22,15 @@ function getStatusColor(status: DeliveryStatus): 'default' | 'secondary' | 'dest
   }
 }
 
-function formatDate(dateString?: string): string {
+function formatDateTime(dateString?: string): string {
   if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleString();
-}
-
-interface DeliveryCardProps {
-  delivery: DeliveryResponse;
-  onSelect: () => void;
-}
-
-function DeliveryCard({ delivery, onSelect }: DeliveryCardProps) {
-  return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onSelect}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-base">
-              {getDeliveryDisplayName(delivery)}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Created: {formatDate(delivery.created_at)}
-            </CardDescription>
-          </div>
-          <Badge variant={getStatusColor(delivery.status)}>
-            {delivery.status.replace('_', ' ')}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <div>
-          <p className="font-medium text-xs text-muted-foreground">From</p>
-          <p className="text-xs">{delivery.pickup.location.formatted_address}</p>
-        </div>
-        <div>
-          <p className="font-medium text-xs text-muted-foreground">To</p>
-          <p className="text-xs">{delivery.dropoff.location.formatted_address}</p>
-        </div>
-        <div className="flex items-center justify-between pt-2">
-          <div>
-            <p className="font-medium text-xs text-muted-foreground">Price</p>
-            <p className="text-sm font-semibold">
-              {(delivery.price.amount / 100).toFixed(2)} {delivery.price.currency}
-            </p>
-          </div>
-          {delivery.courier && (
-            <div className="text-right">
-              <p className="font-medium text-xs text-muted-foreground">Courier</p>
-              <p className="text-xs">{delivery.courier.name}</p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export function DeliveryList() {
@@ -99,11 +55,20 @@ export function DeliveryList() {
     router.push(`/delivery/${delivery.id}`);
   };
 
+  // Sort deliveries by created_at, newest first
+  const sortedDeliveries = [...deliveries].sort((a, b) => {
+    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return dateB - dateA;
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Deliveries</h2>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Deliveries
+          </h2>
           <p className="text-sm text-muted-foreground">
             {deliveries.length} {deliveries.length === 1 ? 'delivery' : 'deliveries'} in this session
           </p>
@@ -119,15 +84,77 @@ export function DeliveryList() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {deliveries.map((delivery) => (
-            <DeliveryCard
-              key={delivery.id}
-              delivery={delivery}
-              onSelect={() => handleSelectDelivery(delivery)}
-            />
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Order
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <div className="flex items-center gap-1">
+                        Created <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      From
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      To
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Price
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {sortedDeliveries.map((delivery) => (
+                    <tr
+                      key={delivery.id}
+                      onClick={() => handleSelectDelivery(delivery)}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    >
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">{getDeliveryDisplayName(delivery)}</span>
+                          <span className="text-xs text-muted-foreground">{delivery.order_number}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-sm">{formatDateTime(delivery.created_at)}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <Badge variant={getStatusColor(delivery.status)}>
+                          {delivery.status.replace('_', ' ')}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-sm text-muted-foreground">
+                          {delivery.pickup.location.formatted_address?.split(',')[0] || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-sm text-muted-foreground">
+                          {delivery.dropoff.location.formatted_address?.split(',')[0] || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="font-semibold text-sm">
+                          {(delivery.price.amount / 100).toFixed(2)} {delivery.price.currency}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
