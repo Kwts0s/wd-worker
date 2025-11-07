@@ -139,40 +139,20 @@ export function useDelivery(deliveryId: string | null) {
 
 /**
  * Hook to list deliveries
+ * @deprecated Wolt venueful API doesn't support listing deliveries. Use Zustand store instead.
  */
-export function useDeliveries(params?: {
+export function useDeliveries(_params?: {
   limit?: number;
   offset?: number;
   status?: DeliveryStatus;
 }) {
-  const { setDeliveries } = useWoltDriveStore();
-
-  const query = useQuery({
-    queryKey: [...queryKeys.deliveries, params],
+  return useQuery({
+    queryKey: [...queryKeys.deliveries, _params],
     queryFn: async () => {
-      const searchParams = new URLSearchParams();
-      if (params?.limit) searchParams.append('limit', params.limit.toString());
-      if (params?.offset) searchParams.append('offset', params.offset.toString());
-      if (params?.status) searchParams.append('status', params.status);
-
-      const response = await fetch(`/api/wolt/deliveries?${searchParams.toString()}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch deliveries');
-      }
-
-      return response.json();
+      throw new Error('List deliveries API not available for venueful endpoints. Use Zustand store instead.');
     },
-    refetchInterval: 60000, // Refetch every minute
+    enabled: false, // Disabled - use Zustand store instead
   });
-
-  // Update store when data changes
-  if (query.data?.deliveries) {
-    setDeliveries(query.data.deliveries);
-  }
-
-  return query;
 }
 
 /**

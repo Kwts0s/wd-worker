@@ -57,13 +57,14 @@ Visit http://localhost:3000 to access the web interface.
 
 - ✅ Complete API type definitions
 - ✅ Create and manage deliveries
-- ✅ Real-time delivery tracking
-- ✅ Get delivery quotes
-- ✅ Cancel deliveries
+- ✅ Get delivery quotes (shipment promises)
+- ✅ Local delivery storage with browser persistence
+- ✅ Detailed delivery information pages
 - ✅ Persistent configuration
 - ✅ Responsive UI design
 - ✅ Error handling
 - ✅ Loading states
+- ✅ API request logging
 
 ## 🔑 Configuration
 

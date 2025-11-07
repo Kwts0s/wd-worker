@@ -6,10 +6,10 @@ A complete delivery integration plugin for e-commerce platforms using the Wolt D
 
 - **Complete Wolt Drive API Integration**
   - Create deliveries
-  - Get delivery quotes
-  - Track deliveries in real-time
-  - List and filter deliveries
-  - Cancel deliveries
+  - Get delivery quotes (shipment promises)
+  - View delivery details
+  - Local delivery storage (session-based)
+  - Beautiful delivery detail pages
 
 - **Modern Tech Stack**
   - Next.js 15 with App Router
@@ -80,10 +80,12 @@ Navigate to "Create Delivery" tab:
 ### 3. Viewing Deliveries
 
 Navigate to "Deliveries" tab:
-- View all your deliveries
-- See real-time status updates
-- Click on any delivery for more details
-- Refresh to get latest updates
+- View all deliveries created in this session
+- Deliveries are stored locally in browser storage (Zustand with persistence)
+- Click on any delivery card to view full details
+- See comprehensive delivery information including tracking, pricing, locations, recipient details, and parcels
+
+**Note:** The Wolt Drive venueful API doesn't provide an endpoint to list deliveries, so this plugin stores deliveries locally when they are created. Deliveries persist across browser sessions using local storage.
 
 ## 🗂️ Project Structure
 
@@ -101,12 +103,22 @@ wolt-drive-plugin/
 │   ├── hooks/
 │   │   └── use-wolt-api.ts       # React Query hooks
 │   ├── store/
-│   │   └── wolt-store.ts         # Zustand state management
+│   │   ├── wolt-store.ts         # Zustand state management
+│   │   └── api-log-store.ts      # API logs storage
 │   ├── types/
 │   │   └── wolt-drive.ts         # TypeScript types
 │   └── app/
 │       ├── layout.tsx            # Root layout
 │       ├── page.tsx              # Main page
+│       ├── delivery/
+│       │   └── [id]/
+│       │       └── page.tsx      # Delivery detail page
+│       ├── api/
+│       │   └── wolt/
+│       │       ├── deliveries/
+│       │       │   └── route.ts  # Create delivery API
+│       │       └── shipment-promises/
+│       │           └── route.ts  # Get quote API
 │       └── globals.css           # Global styles
 ├── wolt-drive-api.postman_collection.json # Postman collection
 └── WOLT_DRIVE_API_WALKTHROUGH.md # API documentation
@@ -130,17 +142,26 @@ const quote = await client.getDeliveryQuote(request);
 ### Using React Query Hooks
 
 ```typescript
-import { useCreateDelivery, useDeliveries } from '@/hooks/use-wolt-api';
+import { useCreateDelivery, useShipmentPromiseMutation } from '@/hooks/use-wolt-api';
 
 function MyComponent() {
   const createDelivery = useCreateDelivery();
-  const { data: deliveries } = useDeliveries();
+  const shipmentPromise = useShipmentPromiseMutation();
   
   const handleCreate = async () => {
-    await createDelivery.mutateAsync(deliveryRequest);
+    // First get a shipment promise (quote)
+    const promise = await shipmentPromise.mutateAsync(quoteRequest);
+    
+    // Then create delivery with the promise ID
+    await createDelivery.mutateAsync({
+      ...deliveryRequest,
+      shipment_promise_id: promise.id
+    });
   };
 }
 ```
+
+**Note:** The `useDeliveries` hook is deprecated as the Wolt venueful API doesn't support listing deliveries. Use the Zustand store to access deliveries instead.
 
 ### Using Zustand Store
 
@@ -154,15 +175,22 @@ function MyComponent() {
 
 ## 📚 API Documentation
 
+### Important Note About Wolt Drive Venueful API
+
+The Wolt Drive venueful endpoints (for venues) **do not support listing deliveries**. The GET endpoint returns a 405 Method Not Allowed error. This is why this plugin stores deliveries locally using Zustand with browser storage persistence.
+
+When you create a delivery, the complete delivery response is stored locally and persists across browser sessions. This allows you to:
+- View all deliveries you've created in this session
+- Access full delivery details
+- Track delivery information
+
+For production use, consider implementing your own backend database to store delivery information if you need to access delivery history across devices or sessions.
+
 ### Postman Collection
 
-Import `../wolt-drive-api.postman_collection.json` into Postman to explore all API endpoints:
-- Get delivery quotes
+Import `../wolt-drive-api.postman_collection.json` into Postman to explore available API endpoints:
+- Get shipment promises (quotes with promise ID)
 - Create deliveries
-- Get delivery details
-- List deliveries
-- Cancel deliveries
-- Get tracking information
 
 ### Complete API Walkthrough
 
@@ -172,7 +200,6 @@ See `../WOLT_DRIVE_API_WALKTHROUGH.md` for:
 - Authentication guide
 - Error handling
 - Best practices
-- Webhook integration
 
 ## 🎨 Customization
 
