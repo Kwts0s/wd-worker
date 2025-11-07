@@ -88,7 +88,7 @@ export default function Home() {
                   key={item.id}
                   onClick={() => {
                     setActiveTab(item.id as typeof activeTab);
-                    if (window.innerWidth < 1024) {
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
                       setSidebarOpen(false);
                     }
                   }}

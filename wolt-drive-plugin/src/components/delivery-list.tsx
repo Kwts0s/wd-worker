@@ -135,12 +135,12 @@ export function DeliveryList() {
                       </td>
                       <td className="px-4 py-4">
                         <span className="text-sm text-muted-foreground">
-                          {delivery.pickup.location.formatted_address.split(',')[0]}
+                          {delivery.pickup.location.formatted_address?.split(',')[0] || 'N/A'}
                         </span>
                       </td>
                       <td className="px-4 py-4">
                         <span className="text-sm text-muted-foreground">
-                          {delivery.dropoff.location.formatted_address.split(',')[0]}
+                          {delivery.dropoff.location.formatted_address?.split(',')[0] || 'N/A'}
                         </span>
                       </td>
                       <td className="px-4 py-4 text-right">
