@@ -38,7 +38,7 @@ export default function Home() {
                 variant="ghost" 
                 size="sm"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden"
+                className=""
               >
                 {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
@@ -47,7 +47,7 @@ export default function Home() {
                   <Truck className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold ">
                     Wolt Drive
                   </h1>
                   <p className="text-xs text-muted-foreground hidden sm:block">
@@ -79,7 +79,7 @@ export default function Home() {
             ${sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full lg:w-16 lg:translate-x-0'}
           `}
         >
-          <nav className="p-4 space-y-2">
+          <nav className="p-4 space-y-6">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -93,16 +93,16 @@ export default function Home() {
                     }
                   }}
                   className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg
-                    transition-all duration-200
+                    w-full flex items-center pt-1 rounded-lg
+                    transition-all duration-200 p-1
                     ${isActive 
-                      ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg' 
+                      ? ' text-zinc-950 shadow-lg pt-2' 
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }
                   `}
                 >
-                  <Icon className={`h-5 w-5 flex-shrink-0 ${!sidebarOpen && 'lg:mx-auto'}`} />
-                  <span className={`font-medium ${!sidebarOpen && 'lg:hidden'}`}>
+                  <Icon className={`h-6 w-6 ${!sidebarOpen && 'lg:mx-auto'}`} />
+                  <span className={`font-medium ${!sidebarOpen && 'lg:hidden ml-1'}`}>
                     {item.label}
                   </span>
                 </button>
