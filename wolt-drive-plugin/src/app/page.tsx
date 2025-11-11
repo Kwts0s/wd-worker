@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreateDeliveryForm } from '@/components/create-delivery-form';
+import { MultiStepDeliveryForm } from '@/components/multi-step-delivery-form';
 import { DeliveryList } from '@/components/delivery-list';
 import { ApiLogs } from '@/components/api-logs';
 import { Button } from '@/components/ui/button';
@@ -116,7 +116,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto">
             {activeTab === 'create' && (
               <div className="max-w-4xl">
-                <CreateDeliveryForm />
+                <MultiStepDeliveryForm />
               </div>
             )}
             {activeTab === 'list' && <DeliveryList />}

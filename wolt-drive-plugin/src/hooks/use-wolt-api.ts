@@ -5,6 +5,7 @@ import {
   CreateDeliveryRequest,
   CancelDeliveryRequest,
   DeliveryStatus,
+  AvailableVenuesRequest,
 } from '@/types/wolt-drive';
 import { useWoltDriveStore } from '@/store/wolt-store';
 
@@ -157,7 +158,6 @@ export function useDeliveries(_params?: {
 
 /**
  * Hook to cancel a delivery
- * TODO: Implement API route for cancel delivery
  */
 export function useCancelDelivery() {
   const queryClient = useQueryClient();
@@ -165,28 +165,64 @@ export function useCancelDelivery() {
 
   return useMutation({
     mutationFn: async (params: {
-      deliveryId: string;
+      woltOrderReferenceId: string;
       request: CancelDeliveryRequest;
     }) => {
-      // TODO: Replace with API route call
-      console.log('Cancel delivery params:', params); // Temporary to avoid unused warning
-      throw new Error('Cancel delivery API not implemented yet');
+      const response = await fetch(
+        `/api/wolt/deliveries/${params.woltOrderReferenceId}/cancel`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(params.request),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.details || 'Failed to cancel delivery');
+      }
+
+      return response.json();
     },
     onMutate: () => {
       setLoading(true);
       setError(null);
     },
     onSuccess: (data, variables) => {
-      updateDelivery(variables.deliveryId, data);
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.delivery(variables.deliveryId),
-      });
+      // Update the delivery status in the store
+      // Note: We need to find the delivery by wolt_order_reference_id
       queryClient.invalidateQueries({ queryKey: queryKeys.deliveries });
       setLoading(false);
     },
     onError: (error: Error) => {
       setError(error.message);
       setLoading(false);
+    },
+  });
+}
+
+/**
+ * Hook to get available venues
+ */
+export function useAvailableVenues() {
+  return useMutation({
+    mutationFn: async (request: AvailableVenuesRequest) => {
+      const response = await fetch('/api/wolt/available-venues', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get available venues');
+      }
+
+      return response.json();
     },
   });
 }
