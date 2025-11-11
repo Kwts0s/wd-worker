@@ -3,15 +3,18 @@ import { CreateDeliveryRequest } from '@/types/wolt-drive';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  let requestBody: CreateDeliveryRequest | null = null;
+  let requestBody: CreateDeliveryRequest & { venue_id?: string } | null = null;
   
   try {
     requestBody = await request.json();
 
     // Use server-side environment variables, fallback to public ones
     const apiToken = process.env.WOLT_API_TOKEN || process.env.NEXT_PUBLIC_WOLT_API_TOKEN;
-    const venueId = process.env.WOLT_VENUE_ID || process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
+    const defaultVenueId = process.env.WOLT_VENUE_ID || process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
     const isDevelopment = (process.env.WOLT_IS_DEVELOPMENT || process.env.NEXT_PUBLIC_WOLT_IS_DEVELOPMENT) === 'true';
+
+    // Use venue_id from request body if provided, otherwise use default from env
+    const venueId = requestBody?.venue_id || defaultVenueId;
 
     if (!apiToken || !venueId) {
       const errorResponse = { error: 'Missing API configuration' };
@@ -23,6 +26,10 @@ export async function POST(request: NextRequest) {
       ? 'https://daas-public-api.development.dev.woltapi.com'
       : 'https://daas-public-api.wolt.com';
 
+    // Remove venue_id from body before sending to Wolt API
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { venue_id, ...cleanRequestBody } = requestBody as CreateDeliveryRequest & { venue_id?: string };
+
     const response = await fetch(
       `${baseURL}/v1/venues/${venueId}/deliveries`,
       {
@@ -31,7 +38,7 @@ export async function POST(request: NextRequest) {
           'Authorization': `Bearer ${apiToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(cleanRequestBody),
       }
     );
 

@@ -6,7 +6,7 @@ import { DeliveryFormData } from '@/store/form-store';
 import { AvailableVenue } from '@/types/wolt-drive';
 import { Package, User, DollarSign, AlertCircle } from 'lucide-react';
 
-interface Step2CreateDeliveryProps {
+interface Step3CreateDeliveryProps {
   formData: DeliveryFormData;
   updateFormData: (updates: Partial<DeliveryFormData>) => void;
   selectedVenue: AvailableVenue | null;
@@ -15,13 +15,13 @@ interface Step2CreateDeliveryProps {
   isSubmitting: boolean;
 }
 
-export function Step2CreateDelivery({
+export function Step3CreateDelivery({
   formData,
   updateFormData,
   selectedVenue,
   shipmentPromiseId,
   onSubmit,
-}: Step2CreateDeliveryProps) {
+}: Step3CreateDeliveryProps) {
   if (!selectedVenue) {
     return (
       <Card>

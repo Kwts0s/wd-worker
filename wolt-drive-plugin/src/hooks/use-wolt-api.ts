@@ -80,7 +80,7 @@ export function useCreateDelivery() {
   const { addDelivery, setLoading, setError } = useWoltDriveStore();
 
   return useMutation({
-    mutationFn: async (request: CreateDeliveryRequest) => {
+    mutationFn: async (request: CreateDeliveryRequest & { venue_id?: string }) => {
       const response = await fetch('/api/wolt/deliveries', {
         method: 'POST',
         headers: {

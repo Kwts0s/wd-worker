@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useCreateDelivery, useAvailableVenues } from '@/hooks/use-wolt-api';
+import { useCreateDelivery, useAvailableVenues, useShipmentPromiseMutation } from '@/hooks/use-wolt-api';
 import { useWoltDriveStore } from '@/store/wolt-store';
 import { useFormStore } from '@/store/form-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { Step1Promise } from '@/components/steps/step-1-promise';
-import { Step2CreateDelivery } from '@/components/steps/step-2-create-delivery';
+import { Step2SelectVenue } from '@/components/steps/step-2-select-venue';
+import { Step3CreateDelivery } from '@/components/steps/step-3-create-delivery';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CreateDeliveryRequest, AvailableVenue } from '@/types/wolt-drive';
 
@@ -16,10 +17,15 @@ const steps = [
   {
     id: 1,
     title: 'Get Quote',
-    description: 'Select venue and get delivery quote',
+    description: 'Get shipment promise',
   },
   {
     id: 2,
+    title: 'Select Venue',
+    description: 'Choose pickup location',
+  },
+  {
+    id: 3,
     title: 'Create Order',
     description: 'Complete delivery details',
   },
@@ -28,6 +34,7 @@ const steps = [
 export function MultiStepDeliveryForm() {
   const { apiToken, merchantId, venueId } = useWoltDriveStore();
   const createDelivery = useCreateDelivery();
+  const shipmentPromiseMutation = useShipmentPromiseMutation();
   const availableVenuesMutation = useAvailableVenues();
 
   const {
@@ -37,7 +44,10 @@ export function MultiStepDeliveryForm() {
     setCurrentStep,
     shipmentPromiseId,
     setShipmentPromiseId,
+    selectedVenueId,
+    setSelectedVenueId,
     scheduledPickupTime,
+    setScheduledPickupTime,
     scheduledDropoffTime,
     setScheduledDropoffTime,
     resetForm,
@@ -76,26 +86,33 @@ export function MultiStepDeliveryForm() {
     }
   };
 
-  const handleStep1Complete = (venue: AvailableVenue) => {
+  const handleStep1Complete = (promiseId: string, pickupTime: string | null, dropoffTime: string | null) => {
+    setShipmentPromiseId(promiseId);
+    if (pickupTime) setScheduledPickupTime(pickupTime);
+    if (dropoffTime) setScheduledDropoffTime(dropoffTime);
+    handleNextStep();
+  };
+
+  const handleStep2Complete = (venue: AvailableVenue) => {
     setSelectedVenue(venue);
-    // Extract scheduled times from venue response
-    if (venue.scheduled_dropoff_time) {
-      setScheduledDropoffTime(venue.scheduled_dropoff_time);
-    }
-    // Set a shipment promise ID (using venue_id as identifier for now)
-    setShipmentPromiseId(venue.pickup.venue_id);
+    setSelectedVenueId(venue.pickup.venue_id);
     handleNextStep();
   };
 
   const handleCreateDelivery = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedVenue) {
-      alert('Please complete Step 1 first!');
+    if (!shipmentPromiseId) {
+      alert('Please complete Step 1 (Get Quote) first!');
       return;
     }
 
-    const request: CreateDeliveryRequest = {
+    if (!selectedVenue) {
+      alert('Please complete Step 2 (Select Venue) first!');
+      return;
+    }
+
+    const request: CreateDeliveryRequest & { venue_id?: string } = {
       pickup: {
         options: {
           min_preparation_time_minutes: parseInt(formData.minPrepTime),
@@ -170,6 +187,7 @@ export function MultiStepDeliveryForm() {
         is_required: false,
         should_send_sms_to_dropoff_contact: true,
       },
+      venue_id: selectedVenueId || undefined,
     };
 
     try {
@@ -201,14 +219,22 @@ export function MultiStepDeliveryForm() {
             <Step1Promise
               formData={formData}
               updateFormData={updateFormData}
-              availableVenuesMutation={availableVenuesMutation}
-              selectedVenue={selectedVenue}
-              onVenueSelect={handleStep1Complete}
+              shipmentPromiseMutation={shipmentPromiseMutation}
+              onPromiseComplete={handleStep1Complete}
             />
           )}
 
           {currentStep === 2 && (
-            <Step2CreateDelivery
+            <Step2SelectVenue
+              formData={formData}
+              availableVenuesMutation={availableVenuesMutation}
+              selectedVenue={selectedVenue}
+              onVenueSelect={handleStep2Complete}
+            />
+          )}
+
+          {currentStep === 3 && (
+            <Step3CreateDelivery
               formData={formData}
               updateFormData={updateFormData}
               selectedVenue={selectedVenue}
@@ -234,7 +260,10 @@ export function MultiStepDeliveryForm() {
           {currentStep < steps.length ? (
             <Button
               onClick={handleNextStep}
-              disabled={!selectedVenue}
+              disabled={
+                (currentStep === 1 && !shipmentPromiseId) ||
+                (currentStep === 2 && !selectedVenue)
+              }
               className="flex items-center gap-2"
             >
               Next

@@ -8,42 +8,37 @@ import { Button } from '@/components/ui/button';
 import { LocationPicker } from '@/components/location-picker';
 import { DeliveryFormData } from '@/store/form-store';
 import {
-  AvailableVenuesRequest,
-  AvailableVenuesResponse,
-  AvailableVenue,
+  ShipmentPromiseRequest,
+  ShipmentPromiseResponse,
 } from '@/types/wolt-drive';
-import { MapPin, CheckCircle2, Clock, DollarSign, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface Step1PromiseProps {
   formData: DeliveryFormData;
   updateFormData: (updates: Partial<DeliveryFormData>) => void;
-  availableVenuesMutation: UseMutationResult<AvailableVenuesResponse, Error, AvailableVenuesRequest>;
-  selectedVenue: AvailableVenue | null;
-  onVenueSelect: (venue: AvailableVenue) => void;
+  shipmentPromiseMutation: UseMutationResult<ShipmentPromiseResponse, Error, ShipmentPromiseRequest>;
+  onPromiseComplete: (promiseId: string, pickupTime: string | null, dropoffTime: string | null) => void;
 }
 
 export function Step1Promise({
   formData,
   updateFormData,
-  availableVenuesMutation,
-  selectedVenue,
-  onVenueSelect,
+  shipmentPromiseMutation,
+  onPromiseComplete,
 }: Step1PromiseProps) {
   const [showMap, setShowMap] = useState(false);
 
-  const handleGetVenues = async (e: React.FormEvent) => {
+  const handleGetPromise = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const request: AvailableVenuesRequest = {
-      dropoff: {
-        location: {
-          formatted_address: `${formData.street}, ${formData.city}`,
-          coordinates: {
-            lat: parseFloat(formData.dropoffLat),
-            lon: parseFloat(formData.dropoffLon),
-          },
-        },
-      },
+    const request: ShipmentPromiseRequest = {
+      street: formData.street,
+      city: formData.city,
+      post_code: formData.postCode,
+      lat: parseFloat(formData.dropoffLat),
+      lon: parseFloat(formData.dropoffLon),
+      language: formData.language,
+      min_preparation_time_minutes: parseInt(formData.minPrepTime),
     };
 
     // Add scheduled dropoff time if provided
@@ -52,9 +47,13 @@ export function Step1Promise({
     }
 
     try {
-      await availableVenuesMutation.mutateAsync(request);
+      const result = await shipmentPromiseMutation.mutateAsync(request);
+      // Extract scheduled times from the quote response
+      const pickupTime = result.pickup?.options?.scheduled_time || null;
+      const dropoffTime = result.dropoff?.options?.scheduled_time || null;
+      onPromiseComplete(result.id, pickupTime, dropoffTime);
     } catch (error) {
-      console.error('Failed to get available venues:', error);
+      console.error('Failed to get shipment promise:', error);
     }
   };
 
@@ -74,16 +73,14 @@ export function Step1Promise({
     });
   };
 
-  const venues = availableVenuesMutation.data || [];
-
   return (
     <div className="space-y-6">
       <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader>
-          <CardTitle className="text-blue-700">Delivery Location</CardTitle>
+          <CardTitle className="text-blue-700">Delivery Location & Quote</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form onSubmit={handleGetVenues} className="space-y-4">
+          <form onSubmit={handleGetPromise} className="space-y-4">
             {/* Location Fields */}
             <div className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
@@ -171,19 +168,54 @@ export function Step1Promise({
 
             <Button
               type="submit"
-              disabled={availableVenuesMutation.isPending}
+              disabled={shipmentPromiseMutation.isPending}
               className="w-full"
             >
-              {availableVenuesMutation.isPending ? (
+              {shipmentPromiseMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Getting Available Venues...
+                  Getting Quote...
                 </>
               ) : (
-                'Get Available Venues'
+                'Get Shipment Promise'
               )}
             </Button>
           </form>
+
+          {/* Success Message */}
+          {shipmentPromiseMutation.data && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <p className="text-sm font-semibold text-green-700">Quote received!</p>
+              </div>
+              <p className="text-sm text-green-600">Shipment Promise ID: {shipmentPromiseMutation.data.id}</p>
+              {shipmentPromiseMutation.data.fee && (
+                <p className="text-sm text-green-600">
+                  Fee: {(shipmentPromiseMutation.data.fee.amount / 100).toFixed(2)} {shipmentPromiseMutation.data.fee.currency}
+                </p>
+              )}
+              {shipmentPromiseMutation.data.estimated_pickup_time && (
+                <p className="text-sm text-green-600">
+                  Estimated Pickup: {new Date(shipmentPromiseMutation.data.estimated_pickup_time).toLocaleString()}
+                </p>
+              )}
+              {shipmentPromiseMutation.data.estimated_delivery_time && (
+                <p className="text-sm text-green-600">
+                  Estimated Delivery: {new Date(shipmentPromiseMutation.data.estimated_delivery_time).toLocaleString()}
+                </p>
+              )}
+              <p className="text-sm text-green-600 mt-2">Click &quot;Next&quot; to select a venue</p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {shipmentPromiseMutation.error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm font-semibold text-red-700">Error getting quote</p>
+              <p className="text-sm text-red-600">{String(shipmentPromiseMutation.error)}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -197,66 +229,6 @@ export function Step1Promise({
           longitude={formData.dropoffLon}
           onLocationChange={handleLocationChange}
         />
-      )}
-
-      {/* Available Venues List */}
-      {venues.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Available Venues</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {venues.map((venue, index) => {
-              const venueName = venue.pickup.name.find((n) => n.lang === 'en')?.value || 'Unknown Venue';
-              const isSelected = selectedVenue?.pickup.venue_id === venue.pickup.venue_id;
-
-              return (
-                <div
-                  key={index}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 shadow-md'
-                      : 'border-border hover:border-primary hover:shadow-sm'
-                  }`}
-                  onClick={() => onVenueSelect(venue)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">{venueName}</h3>
-                        {isSelected && <CheckCircle2 className="h-5 w-5 text-primary" />}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {venue.pickup.location.formatted_address}
-                      </p>
-                      <div className="flex items-center gap-4 mt-3 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {venue.pre_estimate.total_minutes.min}-{venue.pre_estimate.total_minutes.max} min
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-semibold">
-                            {(venue.fee.amount / 100).toFixed(2)} {venue.fee.currency}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
-
-      {availableVenuesMutation.error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm font-semibold text-red-700">Error getting venues</p>
-          <p className="text-sm text-red-600">{String(availableVenuesMutation.error)}</p>
-        </div>
       )}
     </div>
   );

@@ -51,6 +51,7 @@ export interface DeliveryFormData {
 interface FormState {
   formData: DeliveryFormData;
   shipmentPromiseId: string | null;
+  selectedVenueId: string | null;
   scheduledPickupTime: string | null;
   scheduledDropoffTime: string | null;
   currentStep: number;
@@ -58,6 +59,7 @@ interface FormState {
   // Actions
   updateFormData: (updates: Partial<DeliveryFormData>) => void;
   setShipmentPromiseId: (id: string | null) => void;
+  setSelectedVenueId: (id: string | null) => void;
   setScheduledPickupTime: (time: string | null) => void;
   setScheduledDropoffTime: (time: string | null) => void;
   setCurrentStep: (step: number) => void;
@@ -104,6 +106,7 @@ export const useFormStore = create<FormState>()(
     (set) => ({
       formData: getDefaultFormData(),
       shipmentPromiseId: null,
+      selectedVenueId: null,
       scheduledPickupTime: null,
       scheduledDropoffTime: null,
       currentStep: 1,
@@ -115,6 +118,8 @@ export const useFormStore = create<FormState>()(
 
       setShipmentPromiseId: (id) => set({ shipmentPromiseId: id }),
       
+      setSelectedVenueId: (id) => set({ selectedVenueId: id }),
+      
       setScheduledPickupTime: (time) => set({ scheduledPickupTime: time }),
       
       setScheduledDropoffTime: (time) => set({ scheduledDropoffTime: time }),
@@ -125,6 +130,7 @@ export const useFormStore = create<FormState>()(
         set({
           formData: getDefaultFormData(),
           shipmentPromiseId: null,
+          selectedVenueId: null,
           scheduledPickupTime: null,
           scheduledDropoffTime: null,
           currentStep: 1,
