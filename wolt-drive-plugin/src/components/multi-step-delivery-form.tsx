@@ -38,7 +38,6 @@ export function MultiStepDeliveryForm() {
     shipmentPromiseId,
     setShipmentPromiseId,
     scheduledPickupTime,
-    setScheduledPickupTime,
     scheduledDropoffTime,
     setScheduledDropoffTime,
     resetForm,
@@ -214,7 +213,6 @@ export function MultiStepDeliveryForm() {
               updateFormData={updateFormData}
               selectedVenue={selectedVenue}
               shipmentPromiseId={shipmentPromiseId}
-              scheduledDropoffTime={scheduledDropoffTime}
               onSubmit={handleCreateDelivery}
               isSubmitting={createDelivery.isPending}
             />

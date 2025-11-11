@@ -2,17 +2,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { DeliveryFormData } from '@/store/form-store';
 import { AvailableVenue } from '@/types/wolt-drive';
-import { Package, User, Phone, Mail, DollarSign, AlertCircle } from 'lucide-react';
+import { Package, User, DollarSign, AlertCircle } from 'lucide-react';
 
 interface Step2CreateDeliveryProps {
   formData: DeliveryFormData;
   updateFormData: (updates: Partial<DeliveryFormData>) => void;
   selectedVenue: AvailableVenue | null;
   shipmentPromiseId: string | null;
-  scheduledDropoffTime: string | null;
   onSubmit: (e: React.FormEvent) => void;
   isSubmitting: boolean;
 }
@@ -22,9 +20,7 @@ export function Step2CreateDelivery({
   updateFormData,
   selectedVenue,
   shipmentPromiseId,
-  scheduledDropoffTime,
   onSubmit,
-  isSubmitting,
 }: Step2CreateDeliveryProps) {
   if (!selectedVenue) {
     return (

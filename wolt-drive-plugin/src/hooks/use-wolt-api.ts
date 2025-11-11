@@ -161,7 +161,7 @@ export function useDeliveries(_params?: {
  */
 export function useCancelDelivery() {
   const queryClient = useQueryClient();
-  const { updateDelivery, setLoading, setError } = useWoltDriveStore();
+  const { setLoading, setError } = useWoltDriveStore();
 
   return useMutation({
     mutationFn: async (params: {
@@ -190,7 +190,7 @@ export function useCancelDelivery() {
       setLoading(true);
       setError(null);
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       // Update the delivery status in the store
       // Note: We need to find the delivery by wolt_order_reference_id
       queryClient.invalidateQueries({ queryKey: queryKeys.deliveries });
