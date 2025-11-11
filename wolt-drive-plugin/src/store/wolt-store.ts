@@ -9,6 +9,7 @@ interface WoltDriveState {
   merchantId: string | null;
   venueId: string | null;
   isDevelopment: boolean;
+  timezone: string;
   
   // Deliveries
   deliveries: DeliveryResponse[];
@@ -19,8 +20,9 @@ interface WoltDriveState {
   error: string | null;
   
   // Actions
-  setConfig: (apiToken: string, merchantId: string, venueId: string, isDevelopment?: boolean) => void;
+  setConfig: (apiToken: string, merchantId: string, venueId: string, isDevelopment?: boolean, timezone?: string) => void;
   clearConfig: () => void;
+  setTimezone: (timezone: string) => void;
   
   addDelivery: (delivery: DeliveryResponse) => void;
   updateDelivery: (deliveryId: string, updates: Partial<DeliveryResponse>) => void;
@@ -43,12 +45,14 @@ const getInitialConfig = () => {
   const envMerchantId = process.env.NEXT_PUBLIC_WOLT_MERCHANT_ID;
   const envVenueId = process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
   const envIsDevelopment = process.env.NEXT_PUBLIC_WOLT_IS_DEVELOPMENT === 'true';
+  const envTimezone = process.env.NEXT_PUBLIC_WOLT_TIMEZONE || 'Europe/Athens'; // Default to Athens, Greece
 
   return {
     apiToken: envToken || null,
     merchantId: envMerchantId || null,
     venueId: envVenueId || null,
     isDevelopment: envIsDevelopment ?? true,
+    timezone: envTimezone,
   };
 };
 
@@ -78,18 +82,20 @@ export const useWoltDriveStore = create<WoltDriveState>()(
           merchantId: initialConfig.merchantId,
           venueId: initialConfig.venueId,
           isDevelopment: initialConfig.isDevelopment,
+          timezone: initialConfig.timezone,
           deliveries: [],
           selectedDelivery: null,
           isLoading: false,
           error: null,
 
           // Configuration actions
-          setConfig: (apiToken, merchantId, venueId, isDevelopment = true) => {
+          setConfig: (apiToken, merchantId, venueId, isDevelopment = true, timezone = 'Europe/Athens') => {
             set({
               apiToken,
               merchantId,
               venueId,
               isDevelopment,
+              timezone,
             });
           },
 
@@ -100,7 +106,12 @@ export const useWoltDriveStore = create<WoltDriveState>()(
               venueId: null,
               deliveries: [],
               selectedDelivery: null,
+              timezone: 'Europe/Athens',
             });
+          },
+
+          setTimezone: (timezone) => {
+            set({ timezone });
           },
 
           // Delivery actions
@@ -170,6 +181,7 @@ export const useWoltDriveStore = create<WoltDriveState>()(
           merchantId: state.merchantId,
           venueId: state.venueId,
           isDevelopment: state.isDevelopment,
+          timezone: state.timezone,
           deliveries: state.deliveries,
         }),
       }

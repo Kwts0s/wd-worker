@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UseMutationResult } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { LocationPicker } from '@/components/location-picker';
 import { DeliveryFormData } from '@/store/form-store';
+import { useWoltDriveStore } from '@/store/wolt-store';
 import {
   AvailableVenuesRequest,
   AvailableVenuesResponse,
   AvailableVenue,
 } from '@/types/wolt-drive';
 import { MapPin, CheckCircle2, Clock, DollarSign, Loader2 } from 'lucide-react';
+import { getDefaultScheduledTime, isScheduledMoreThanOneHour, formatTimeInTimezone } from '@/utils/time-utils';
 
 interface Step1SelectVenueProps {
   formData: DeliveryFormData;
@@ -30,6 +32,18 @@ export function Step1SelectVenue({
   onVenueSelect,
 }: Step1SelectVenueProps) {
   const [showMap, setShowMap] = useState(false);
+  const [userSetTime, setUserSetTime] = useState(false); // Track if user manually set time
+  const { timezone } = useWoltDriveStore();
+
+  // Initialize with default time on mount
+  useEffect(() => {
+    // Only set default time if there's no scheduled time or if it's not user-set
+    if (!formData.scheduledDropoffTime || !userSetTime) {
+      const defaultTime = getDefaultScheduledTime(60); // +60 minutes
+      updateFormData({ scheduledDropoffTime: defaultTime });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
   const handleLocationChange = (location: {
     street: string;
@@ -47,15 +61,30 @@ export function Step1SelectVenue({
     });
   };
 
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const localDateTime = e.target.value;
+    if (localDateTime) {
+      const isoDateTime = new Date(localDateTime).toISOString();
+      updateFormData({ scheduledDropoffTime: isoDateTime });
+      setUserSetTime(true); // Mark as user-set
+    } else {
+      // If cleared, reset to default
+      const defaultTime = getDefaultScheduledTime(60);
+      updateFormData({ scheduledDropoffTime: defaultTime });
+      setUserSetTime(false);
+    }
+  };
+
   const handleGetVenues = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Set default dropoff time if not provided (+60 minutes from now)
+    // Determine the scheduled time to use
     let scheduledTime = formData.scheduledDropoffTime;
-    if (!scheduledTime) {
-      const now = new Date();
-      now.setMinutes(now.getMinutes() + 60);
-      scheduledTime = now.toISOString();
+    
+    // If user hasn't set a custom time OR if the time is less than 1 hour in the future
+    // Set to current time + 61 minutes
+    if (!userSetTime || !isScheduledMoreThanOneHour(scheduledTime)) {
+      scheduledTime = getDefaultScheduledTime(61); // +61 minutes for the actual request
       updateFormData({ scheduledDropoffTime: scheduledTime });
     }
 
@@ -153,40 +182,17 @@ export function Step1SelectVenue({
               <label className="text-sm font-medium">Scheduled Dropoff Time (optional)</label>
               <Input
                 type="datetime-local"
-                value={formData.scheduledDropoffTime ? 
-                  new Date(formData.scheduledDropoffTime).toISOString().slice(0, 16) : 
-                  ''
-                }
-                onChange={(e) => {
-                  const localDateTime = e.target.value;
-                  if (localDateTime) {
-                    const selectedTime = new Date(localDateTime);
-                    const now = new Date();
-                    
-                    // Ensure the selected time is at least 60 minutes from now
-                    const minTime = new Date(now.getTime() + 60 * 60 * 1000); // +60 minutes
-                    
-                    if (selectedTime < minTime) {
-                      // If selected time is too early, use the minimum time
-                      const isoDateTime = minTime.toISOString();
-                      updateFormData({ scheduledDropoffTime: isoDateTime });
-                    } else {
-                      const isoDateTime = selectedTime.toISOString();
-                      updateFormData({ scheduledDropoffTime: isoDateTime });
-                    }
-                  } else {
-                    updateFormData({ scheduledDropoffTime: '' });
-                  }
-                }}
+                onChange={handleTimeChange}
                 placeholder="Select scheduled dropoff time"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Leave empty for default (+60 minutes from now). Selected time must be at least 60 minutes in the future.
+                Leave empty for automatic time (current +60 min on load, +61 min when getting venues)
               </p>
               {formData.scheduledDropoffTime && (
-                <p className="text-xs text-blue-600 mt-1">
-                  Will send: {formData.scheduledDropoffTime}
-                </p>
+                <div className="text-xs text-blue-600 mt-1">
+                  <p>Scheduled for: {formatTimeInTimezone(formData.scheduledDropoffTime, timezone)}</p>
+                  <p className="text-xs text-muted-foreground">Timezone: {timezone}</p>
+                </div>
               )}
             </div>
 

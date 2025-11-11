@@ -147,7 +147,11 @@ export const useFormStore = create<FormState>()(
     {
       name: 'delivery-form-storage',
       partialize: (state) => ({
-        formData: state.formData,
+        formData: {
+          ...state.formData,
+          // Don't persist scheduledDropoffTime - it should be recalculated on each load
+          scheduledDropoffTime: '',
+        },
         currentStep: state.currentStep,
       }),
     }
