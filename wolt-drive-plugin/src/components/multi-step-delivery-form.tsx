@@ -7,8 +7,8 @@ import { useFormStore } from '@/store/form-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StepIndicator } from '@/components/ui/step-indicator';
-import { Step1Promise } from '@/components/steps/step-1-promise';
-import { Step2SelectVenue } from '@/components/steps/step-2-select-venue';
+import { Step1SelectVenue } from '@/components/steps/step-1-select-venue';
+import { Step2Promise } from '@/components/steps/step-2-promise';
 import { Step3CreateDelivery } from '@/components/steps/step-3-create-delivery';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CreateDeliveryRequest, AvailableVenue } from '@/types/wolt-drive';
@@ -16,13 +16,13 @@ import { CreateDeliveryRequest, AvailableVenue } from '@/types/wolt-drive';
 const steps = [
   {
     id: 1,
-    title: 'Get Quote',
-    description: 'Get shipment promise',
+    title: 'Select Venue',
+    description: 'Choose location & venue',
   },
   {
     id: 2,
-    title: 'Select Venue',
-    description: 'Choose pickup location',
+    title: 'Get Quote',
+    description: 'Get shipment promise',
   },
   {
     id: 3,
@@ -86,29 +86,29 @@ export function MultiStepDeliveryForm() {
     }
   };
 
-  const handleStep1Complete = (promiseId: string, pickupTime: string | null, dropoffTime: string | null) => {
+  const handleStep1Complete = (venue: AvailableVenue) => {
+    setSelectedVenue(venue);
+    setSelectedVenueId(venue.pickup.venue_id);
+    handleNextStep();
+  };
+
+  const handleStep2Complete = (promiseId: string, pickupTime: string | null, dropoffTime: string | null) => {
     setShipmentPromiseId(promiseId);
     if (pickupTime) setScheduledPickupTime(pickupTime);
     if (dropoffTime) setScheduledDropoffTime(dropoffTime);
     handleNextStep();
   };
 
-  const handleStep2Complete = (venue: AvailableVenue) => {
-    setSelectedVenue(venue);
-    setSelectedVenueId(venue.pickup.venue_id);
-    handleNextStep();
-  };
-
   const handleCreateDelivery = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!shipmentPromiseId) {
-      alert('Please complete Step 1 (Get Quote) first!');
+    if (!selectedVenue) {
+      alert('Please complete Step 1 (Select Venue) first!');
       return;
     }
 
-    if (!selectedVenue) {
-      alert('Please complete Step 2 (Select Venue) first!');
+    if (!shipmentPromiseId) {
+      alert('Please complete Step 2 (Get Quote) first!');
       return;
     }
 
@@ -216,20 +216,21 @@ export function MultiStepDeliveryForm() {
         {/* Step Content */}
         <div className="mt-8">
           {currentStep === 1 && (
-            <Step1Promise
+            <Step1SelectVenue
               formData={formData}
               updateFormData={updateFormData}
-              shipmentPromiseMutation={shipmentPromiseMutation}
-              onPromiseComplete={handleStep1Complete}
+              availableVenuesMutation={availableVenuesMutation}
+              selectedVenue={selectedVenue}
+              onVenueSelect={handleStep1Complete}
             />
           )}
 
           {currentStep === 2 && (
-            <Step2SelectVenue
+            <Step2Promise
               formData={formData}
-              availableVenuesMutation={availableVenuesMutation}
-              selectedVenue={selectedVenue}
-              onVenueSelect={handleStep2Complete}
+              selectedVenueId={selectedVenueId}
+              shipmentPromiseMutation={shipmentPromiseMutation}
+              onPromiseComplete={handleStep2Complete}
             />
           )}
 
@@ -261,8 +262,8 @@ export function MultiStepDeliveryForm() {
             <Button
               onClick={handleNextStep}
               disabled={
-                (currentStep === 1 && !shipmentPromiseId) ||
-                (currentStep === 2 && !selectedVenue)
+                (currentStep === 1 && !selectedVenue) ||
+                (currentStep === 2 && !shipmentPromiseId)
               }
               className="flex items-center gap-2"
             >

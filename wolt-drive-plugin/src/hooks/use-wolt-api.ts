@@ -53,7 +53,7 @@ export function useDeliveryQuote(request: DeliveryQuoteRequest | null) {
  */
 export function useShipmentPromiseMutation() {
   return useMutation({
-    mutationFn: async (request: ShipmentPromiseRequest) => {
+    mutationFn: async (request: ShipmentPromiseRequest & { venue_id?: string }) => {
       const response = await fetch('/api/wolt/shipment-promises', {
         method: 'POST',
         headers: {
