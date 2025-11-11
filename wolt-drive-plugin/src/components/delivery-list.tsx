@@ -8,15 +8,17 @@ import { useRouter } from 'next/navigation';
 import { getDeliveryDisplayName } from '@/lib/delivery-utils';
 import { ArrowUpDown } from 'lucide-react';
 
-function getStatusColor(status: DeliveryStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
+function getStatusColor(status: DeliveryStatus): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' {
   switch (status) {
     case 'delivered':
-      return 'default';
+      return 'success';
     case 'in_transit':
     case 'picking_up':
-      return 'secondary';
+      return 'default';
     case 'cancelled':
       return 'destructive';
+    case 'scheduled':
+      return 'warning';
     default:
       return 'outline';
   }
@@ -66,10 +68,10 @@ export function DeliveryList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground">
             Deliveries
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             {deliveries.length} {deliveries.length === 1 ? 'delivery' : 'deliveries'} in this session
           </p>
         </div>

@@ -28,29 +28,29 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-20">
+      <header className="bg-card border-b border-border sticky top-0 z-20 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button 
                 variant="ghost" 
-                size="sm"
+                size="icon"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className=""
+                className="lg:hidden"
               >
                 {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                  <Truck className="h-6 w-6 text-white" />
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-md">
+                  <Truck className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold ">
+                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                     Wolt Drive
                   </h1>
-                  <p className="text-xs text-muted-foreground hidden sm:block">
+                  <p className="text-sm text-muted-foreground hidden sm:block">
                     E-shop Delivery Integration
                   </p>
                 </div>
@@ -58,7 +58,7 @@ export default function Home() {
             </div>
             <Button
               variant="outline"
-              size="sm"
+              size="default"
               onClick={() => router.push('/settings')}
               className="flex items-center gap-2"
             >
@@ -73,13 +73,13 @@ export default function Home() {
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] z-10
-            bg-card/80 backdrop-blur-sm border-r border-border/50
+            fixed lg:sticky top-[73px] left-0 h-[calc(100vh-73px)] z-10
+            bg-card border-r border-border
             transition-all duration-300 ease-in-out
-            ${sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full lg:w-16 lg:translate-x-0'}
+            ${sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full lg:w-20 lg:translate-x-0'}
           `}
         >
-          <nav className="p-4 space-y-6">
+          <nav className="p-3 space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -93,16 +93,17 @@ export default function Home() {
                     }
                   }}
                   className={`
-                    w-full flex items-center pt-1 rounded-lg
-                    transition-all duration-200 p-1
+                    w-full flex items-center gap-3 rounded-lg px-4 py-3
+                    transition-all duration-200 font-medium
                     ${isActive 
-                      ? ' text-zinc-950 shadow-lg pt-2' 
+                      ? 'bg-accent text-primary shadow-sm' 
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }
+                    ${!sidebarOpen && 'lg:justify-center lg:px-0'}
                   `}
                 >
-                  <Icon className={`h-6 w-6 ${!sidebarOpen && 'lg:mx-auto'}`} />
-                  <span className={`font-medium ${!sidebarOpen && 'lg:hidden ml-1'}`}>
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className={`${!sidebarOpen && 'lg:hidden'}`}>
                     {item.label}
                   </span>
                 </button>
@@ -126,15 +127,15 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-card/80 backdrop-blur-sm border-t border-border/50 mt-12">
+      <footer className="bg-card border-t border-border mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
               Built with Next.js, Zustand, React Query, and Shadcn UI
             </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Powered by</span>
-              <span className="font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <span className="font-semibold text-primary">
                 Wolt Drive API
               </span>
             </div>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function ConfigurationForm() {
   const { apiToken, merchantId, venueId, isDevelopment, setConfig, clearConfig } = useWoltDriveStore();
@@ -100,31 +101,29 @@ export function ConfigurationForm() {
           />
         </div>
 
-        <div className="flex items-center space-x-2">
-          <input
+        <div className="flex items-center space-x-3">
+          <Checkbox
             id="isDevelopment"
-            type="checkbox"
             checked={tempIsDev}
             onChange={(e) => setTempIsDev(e.target.checked)}
-            className="rounded border-gray-300"
           />
-          <label htmlFor="isDevelopment" className="text-sm font-medium">
+          <label htmlFor="isDevelopment" className="text-sm font-medium cursor-pointer">
             Use Development Environment
           </label>
         </div>
 
         {error && (
-          <div className="text-sm text-red-500">
+          <div className="p-3 text-sm text-destructive bg-red-50 border border-red-200 rounded-lg">
             {error}
           </div>
         )}
 
-        <div className="flex gap-2">
-          <Button onClick={handleSave}>
+        <div className="flex gap-3 pt-2">
+          <Button onClick={handleSave} size="lg">
             {isConfigured ? 'Update' : 'Save'} Configuration
           </Button>
           {isConfigured && (
-            <Button variant="outline" onClick={handleClear}>
+            <Button variant="outline" size="lg" onClick={handleClear}>
               Clear
             </Button>
           )}

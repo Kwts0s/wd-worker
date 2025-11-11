@@ -1,0 +1,231 @@
+/* Wolt Design System - Custom Styles */
+
+/* Wolt Brand Colors */
+:root {
+  /* Wolt's signature blue */
+  --wolt-blue: #009de0;
+  --wolt-blue-hover: #0086bf;
+  --wolt-blue-light: #e5f6fd;
+  
+  /* Supporting colors */
+  --wolt-dark: #202125;
+  --wolt-gray: #5e6366;
+  --wolt-light-gray: #f4f4f5;
+  --wolt-border: #e6e6e6;
+  
+  /* Status colors */
+  --wolt-success: #00c569;
+  --wolt-warning: #ff9500;
+  --wolt-error: #e7173d;
+  
+  /* Typography */
+  --wolt-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --wolt-heading-weight: 600;
+  --wolt-body-weight: 400;
+}
+
+/* Wolt Typography */
+.wolt-heading {
+  font-family: var(--wolt-font-family);
+  font-weight: var(--wolt-heading-weight);
+  color: var(--wolt-dark);
+  letter-spacing: -0.02em;
+}
+
+.wolt-text {
+  font-family: var(--wolt-font-family);
+  font-weight: var(--wolt-body-weight);
+  color: var(--wolt-gray);
+  line-height: 1.5;
+}
+
+/* Wolt Button Styles */
+.wolt-button-primary {
+  background-color: var(--wolt-blue);
+  color: white;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 12px 24px;
+  border: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wolt-button-primary:hover {
+  background-color: var(--wolt-blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 157, 224, 0.2);
+}
+
+.wolt-button-secondary {
+  background-color: white;
+  color: var(--wolt-blue);
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 12px 24px;
+  border: 2px solid var(--wolt-blue);
+  transition: all 0.2s ease;
+}
+
+.wolt-button-secondary:hover {
+  background-color: var(--wolt-blue-light);
+}
+
+/* Wolt Card Styles */
+.wolt-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--wolt-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.wolt-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Wolt Input Styles */
+.wolt-input {
+  border: 1px solid var(--wolt-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-family: var(--wolt-font-family);
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.wolt-input:focus {
+  outline: none;
+  border-color: var(--wolt-blue);
+  box-shadow: 0 0 0 3px var(--wolt-blue-light);
+}
+
+.wolt-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Wolt Layout */
+.wolt-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.wolt-section {
+  padding: 48px 0;
+}
+
+/* Wolt Grid */
+.wolt-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.wolt-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.wolt-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* Wolt Shadows */
+.wolt-shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wolt-shadow-md {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.wolt-shadow-lg {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Wolt Badge */
+.wolt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.wolt-badge-primary {
+  background-color: var(--wolt-blue-light);
+  color: var(--wolt-blue);
+}
+
+.wolt-badge-success {
+  background-color: #d1f4e0;
+  color: var(--wolt-success);
+}
+
+.wolt-badge-warning {
+  background-color: #fff3e0;
+  color: var(--wolt-warning);
+}
+
+.wolt-badge-error {
+  background-color: #fce8ec;
+  color: var(--wolt-error);
+}
+
+/* Wolt Sidebar */
+.wolt-sidebar {
+  background: white;
+  border-right: 1px solid var(--wolt-border);
+}
+
+.wolt-sidebar-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  color: var(--wolt-gray);
+  transition: all 0.2s ease;
+  margin-bottom: 4px;
+}
+
+.wolt-sidebar-item:hover {
+  background-color: var(--wolt-light-gray);
+  color: var(--wolt-dark);
+}
+
+.wolt-sidebar-item-active {
+  background-color: var(--wolt-blue-light);
+  color: var(--wolt-blue);
+  font-weight: 600;
+}
+
+/* Wolt Header */
+.wolt-header {
+  background: white;
+  border-bottom: 1px solid var(--wolt-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Wolt Animations */
+@keyframes wolt-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wolt-fade-in {
+  animation: wolt-fade-in 0.3s ease;
+}
+
+/* Smooth transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}

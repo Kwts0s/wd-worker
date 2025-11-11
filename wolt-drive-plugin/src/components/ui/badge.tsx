@@ -5,21 +5,23 @@ import { cn } from "@/lib/utils"
 const Badge = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
-    variant?: "default" | "secondary" | "destructive" | "outline"
+    variant?: "default" | "secondary" | "destructive" | "outline" | "success" | "warning"
   }
 >(({ className, variant = "default", ...props }, ref) => {
   const variants = {
-    default: "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
-    secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    destructive: "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-    outline: "text-foreground"
+    default: "border-transparent bg-accent text-primary shadow-sm hover:bg-accent/80",
+    secondary: "border-transparent bg-muted text-muted-foreground hover:bg-muted/80",
+    destructive: "border-transparent bg-red-50 text-destructive shadow-sm hover:bg-red-100",
+    success: "border-transparent bg-green-50 text-success shadow-sm hover:bg-green-100",
+    warning: "border-transparent bg-orange-50 text-warning shadow-sm hover:bg-orange-100",
+    outline: "text-foreground border-border"
   }
   
   return (
     <div
       ref={ref}
       className={cn(
-        "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200",
         variants[variant],
         className
       )}
