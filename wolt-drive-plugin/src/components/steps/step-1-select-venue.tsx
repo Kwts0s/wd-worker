@@ -50,11 +50,11 @@ export function Step1SelectVenue({
   const handleGetVenues = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Set default dropoff time if not provided (+30 minutes from now)
+    // Set default dropoff time if not provided (+60 minutes from now)
     let scheduledTime = formData.scheduledDropoffTime;
     if (!scheduledTime) {
       const now = new Date();
-      now.setMinutes(now.getMinutes() + 30);
+      now.setMinutes(now.getMinutes() + 60);
       scheduledTime = now.toISOString();
       updateFormData({ scheduledDropoffTime: scheduledTime });
     }
@@ -153,11 +153,27 @@ export function Step1SelectVenue({
               <label className="text-sm font-medium">Scheduled Dropoff Time (optional)</label>
               <Input
                 type="datetime-local"
+                value={formData.scheduledDropoffTime ? 
+                  new Date(formData.scheduledDropoffTime).toISOString().slice(0, 16) : 
+                  ''
+                }
                 onChange={(e) => {
                   const localDateTime = e.target.value;
                   if (localDateTime) {
-                    const isoDateTime = new Date(localDateTime).toISOString();
-                    updateFormData({ scheduledDropoffTime: isoDateTime });
+                    const selectedTime = new Date(localDateTime);
+                    const now = new Date();
+                    
+                    // Ensure the selected time is at least 60 minutes from now
+                    const minTime = new Date(now.getTime() + 60 * 60 * 1000); // +60 minutes
+                    
+                    if (selectedTime < minTime) {
+                      // If selected time is too early, use the minimum time
+                      const isoDateTime = minTime.toISOString();
+                      updateFormData({ scheduledDropoffTime: isoDateTime });
+                    } else {
+                      const isoDateTime = selectedTime.toISOString();
+                      updateFormData({ scheduledDropoffTime: isoDateTime });
+                    }
                   } else {
                     updateFormData({ scheduledDropoffTime: '' });
                   }
@@ -165,7 +181,7 @@ export function Step1SelectVenue({
                 placeholder="Select scheduled dropoff time"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Leave empty for default (+30 minutes from now)
+                Leave empty for default (+60 minutes from now). Selected time must be at least 60 minutes in the future.
               </p>
               {formData.scheduledDropoffTime && (
                 <p className="text-xs text-blue-600 mt-1">
