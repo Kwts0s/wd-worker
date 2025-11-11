@@ -6,6 +6,7 @@ import { useWoltDriveStore } from '@/store/wolt-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { CreateDeliveryRequest, ShipmentPromiseRequest } from '@/types/wolt-drive';
 
 export function CreateDeliveryForm() {
@@ -223,35 +224,35 @@ export function CreateDeliveryForm() {
       <CardContent>
         <form onSubmit={handleGetQuote} className="space-y-6 mb-8">
           {/* Step 1: Get Quote */}
-          <div className="space-y-4 border-2 border-blue-200 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-blue-700">Step 1: Get Shipment Quote</h3>
+          <div className="space-y-4 border-2 border-accent p-4 rounded-lg">
+            <h3 className="text-lg font-semibold text-primary">Step 1: Get Shipment Quote</h3>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium">Street</label>
+              <div className="md:col-span-2 space-y-2">
+                <Label>Street</Label>
                 <Input
                   value={formData.street}
                   onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                   required
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">City</label>
+              <div className="space-y-2">
+                <Label>City</Label>
                 <Input
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   required
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Post Code</label>
+              <div className="space-y-2">
+                <Label>Post Code</Label>
                 <Input
                   value={formData.postCode}
                   onChange={(e) => setFormData({ ...formData, postCode: e.target.value })}
                   required
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Latitude</label>
+              <div className="space-y-2">
+                <Label>Latitude</Label>
                 <Input
                   type="number"
                   step="any"
@@ -260,8 +261,8 @@ export function CreateDeliveryForm() {
                   required
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Longitude</label>
+              <div className="space-y-2">
+                <Label>Longitude</Label>
                 <Input
                   type="number"
                   step="any"
@@ -270,16 +271,16 @@ export function CreateDeliveryForm() {
                   required
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Language</label>
+              <div className="space-y-2">
+                <Label>Language</Label>
                 <Input
                   value={formData.language}
                   onChange={(e) => setFormData({ ...formData, language: e.target.value })}
                   required
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Min Preparation Time (minutes)</label>
+              <div className="space-y-2">
+                <Label>Min Preparation Time (minutes)</Label>
                 <Input
                   type="number"
                   value={formData.minPrepTime}
@@ -288,7 +289,7 @@ export function CreateDeliveryForm() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="text-sm font-medium">Scheduled Dropoff Time (optional)</label>
+                <Label>Scheduled Dropoff Time (optional)</Label>
                 <Input
                   type="datetime-local"
                   onChange={(e) => {
@@ -318,7 +319,7 @@ export function CreateDeliveryForm() {
             </Button>
             {shipmentPromiseMutation.data && (
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm font-semibold text-green-700">Quote received!</p>
+                <p className="text-sm font-semibold text-primary">Quote received!</p>
                 <p className="text-sm text-green-600">Shipment Promise ID: {shipmentPromiseMutation.data.id}</p>
                 {shipmentPromiseMutation.data.fee && (
                   <p className="text-sm text-green-600">
@@ -348,15 +349,15 @@ export function CreateDeliveryForm() {
 
         {/* Step 2: Create Delivery */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4 border-2 border-green-200 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-700">Step 2: Create Delivery Order</h3>
+          <div className="space-y-4 border-2 border-accent p-4 rounded-lg">
+            <h3 className="text-lg font-semibold text-primary">Step 2: Create Delivery Order</h3>
             
             {/* Shipment Promise ID Section */}
             {shipmentPromiseId && (
               <div className="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h4 className="font-semibold text-blue-800">Quote Information</h4>
-                <div>
-                  <label className="text-sm font-medium text-blue-700">Shipment Promise ID</label>
+                <div className="space-y-2">
+                  <Label>Shipment Promise ID</Label>
                   <Input
                     value={shipmentPromiseId}
                     readOnly
@@ -367,8 +368,8 @@ export function CreateDeliveryForm() {
                   </p>
                 </div>
                 {scheduledDropoffTime && (
-                  <div>
-                    <label className="text-sm font-medium text-blue-700">Scheduled Dropoff Time</label>
+                  <div className="space-y-2">
+                    <Label>Scheduled Dropoff Time</Label>
                     <Input
                       value={scheduledDropoffTime}
                       readOnly
@@ -382,8 +383,8 @@ export function CreateDeliveryForm() {
             {/* Pickup Section */}
             <div className="space-y-4">
               <h4 className="font-semibold">Pickup Options</h4>
-              <div>
-                <label className="text-sm font-medium">Pickup Comment (optional)</label>
+              <div className="space-y-2">
+                <Label>Pickup Comment (optional)</Label>
                 <Input
                   value={formData.pickupComment}
                   onChange={(e) => setFormData({ ...formData, pickupComment: e.target.value })}
@@ -395,16 +396,16 @@ export function CreateDeliveryForm() {
             <div className="space-y-4">
               <h4 className="font-semibold">Recipient Details</h4>
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium">Name</label>
+                <div className="space-y-2">
+                  <Label>Name</Label>
                   <Input
                     value={formData.dropoffName}
                     onChange={(e) => setFormData({ ...formData, dropoffName: e.target.value })}
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Phone Number</label>
+                <div className="space-y-2">
+                  <Label>Phone Number</Label>
                   <Input
                     value={formData.dropoffPhone}
                     onChange={(e) => setFormData({ ...formData, dropoffPhone: e.target.value })}
@@ -412,7 +413,7 @@ export function CreateDeliveryForm() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-sm font-medium">Email</label>
+                  <Label>Email</Label>
                   <Input
                     type="email"
                     value={formData.dropoffEmail}
@@ -421,7 +422,7 @@ export function CreateDeliveryForm() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-sm font-medium">Dropoff Comment (optional)</label>
+                  <Label>Dropoff Comment (optional)</Label>
                   <Input
                     value={formData.dropoffComment}
                     onChange={(e) => setFormData({ ...formData, dropoffComment: e.target.value })}
@@ -434,16 +435,16 @@ export function CreateDeliveryForm() {
             <div className="space-y-4">
               <h4 className="font-semibold">Order Details</h4>
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium">Order Reference</label>
+                <div className="space-y-2">
+                  <Label>Order Reference</Label>
                   <Input
                     value={formData.orderReference}
                     onChange={(e) => setFormData({ ...formData, orderReference: e.target.value })}
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Order Price (cents)</label>
+                <div className="space-y-2">
+                  <Label>Order Price (cents)</Label>
                   <Input
                     type="number"
                     value={formData.orderPrice}
@@ -458,24 +459,24 @@ export function CreateDeliveryForm() {
             <div className="space-y-4">
               <h4 className="font-semibold">Parcel Details</h4>
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium">Description</label>
+                <div className="space-y-2">
+                  <Label>Description</Label>
                   <Input
                     value={formData.parcelDescription}
                     onChange={(e) => setFormData({ ...formData, parcelDescription: e.target.value })}
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Identifier</label>
+                <div className="space-y-2">
+                  <Label>Identifier</Label>
                   <Input
                     value={formData.parcelIdentifier}
                     onChange={(e) => setFormData({ ...formData, parcelIdentifier: e.target.value })}
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Count</label>
+                <div className="space-y-2">
+                  <Label>Count</Label>
                   <Input
                     type="number"
                     min="1"
@@ -484,8 +485,8 @@ export function CreateDeliveryForm() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Weight (grams)</label>
+                <div className="space-y-2">
+                  <Label>Weight (grams)</Label>
                   <Input
                     type="number"
                     value={formData.parcelWeight}
@@ -493,8 +494,8 @@ export function CreateDeliveryForm() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Width (cm)</label>
+                <div className="space-y-2">
+                  <Label>Width (cm)</Label>
                   <Input
                     type="number"
                     value={formData.parcelWidth}
@@ -502,8 +503,8 @@ export function CreateDeliveryForm() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Height (cm)</label>
+                <div className="space-y-2">
+                  <Label>Height (cm)</Label>
                   <Input
                     type="number"
                     value={formData.parcelHeight}
@@ -511,8 +512,8 @@ export function CreateDeliveryForm() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Depth (cm)</label>
+                <div className="space-y-2">
+                  <Label>Depth (cm)</Label>
                   <Input
                     type="number"
                     value={formData.parcelDepth}
@@ -520,8 +521,8 @@ export function CreateDeliveryForm() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Parcel Price (cents)</label>
+                <div className="space-y-2">
+                  <Label>Parcel Price (cents)</Label>
                   <Input
                     type="number"
                     value={formData.parcelPrice}
@@ -536,16 +537,16 @@ export function CreateDeliveryForm() {
             <div className="space-y-4">
               <h4 className="font-semibold">Customer Support</h4>
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium">Support URL</label>
+                <div className="space-y-2">
+                  <Label>Support URL</Label>
                   <Input
                     value={formData.supportUrl}
                     onChange={(e) => setFormData({ ...formData, supportUrl: e.target.value })}
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Tip Amount (cents)</label>
+                <div className="space-y-2">
+                  <Label>Tip Amount (cents)</Label>
                   <Input
                     type="number"
                     value={formData.tipAmount}
@@ -556,7 +557,7 @@ export function CreateDeliveryForm() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2">
+              <Label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={formData.noContact}
@@ -564,7 +565,7 @@ export function CreateDeliveryForm() {
                   className="rounded border-gray-300"
                 />
                 <span className="text-sm font-medium">No contact delivery</span>
-              </label>
+              </Label>
             </div>
 
             <Button 

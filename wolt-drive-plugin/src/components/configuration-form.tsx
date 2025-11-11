@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 export function ConfigurationForm() {
   const { apiToken, merchantId, venueId, isDevelopment, setConfig, clearConfig } = useWoltDriveStore();
@@ -63,11 +64,11 @@ export function ConfigurationForm() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <div className="space-y-2">
-          <label htmlFor="apiToken" className="text-sm font-medium">
+          <Label htmlFor="apiToken">
             API Token
-          </label>
+          </Label>
           <Input
             id="apiToken"
             type="password"
@@ -78,9 +79,9 @@ export function ConfigurationForm() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="merchantId" className="text-sm font-medium">
+          <Label htmlFor="merchantId">
             Merchant ID
-          </label>
+          </Label>
           <Input
             id="merchantId"
             placeholder="Enter your merchant ID"
@@ -90,9 +91,9 @@ export function ConfigurationForm() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="venueId" className="text-sm font-medium">
+          <Label htmlFor="venueId">
             Venue ID
-          </label>
+          </Label>
           <Input
             id="venueId"
             placeholder="Enter your venue ID"
@@ -101,15 +102,15 @@ export function ConfigurationForm() {
           />
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 pt-1">
           <Checkbox
             id="isDevelopment"
             checked={tempIsDev}
             onChange={(e) => setTempIsDev(e.target.checked)}
           />
-          <label htmlFor="isDevelopment" className="text-sm font-medium cursor-pointer">
+          <Label htmlFor="isDevelopment" className="cursor-pointer">
             Use Development Environment
-          </label>
+          </Label>
         </div>
 
         {error && (
