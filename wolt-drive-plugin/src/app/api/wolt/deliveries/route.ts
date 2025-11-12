@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CreateDeliveryRequest } from '@/types/wolt-drive';
+import { CreateDeliveryRequest, DeliveryResponse } from '@/types/wolt-drive';
+import { saveDelivery, getAllDeliveries } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -49,7 +50,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(errorResponse, { status: response.status });
     }
 
-    const data = await response.json();
+    const data = await response.json() as DeliveryResponse;
+    
+    // Save delivery to database
+    try {
+      saveDelivery(data);
+    } catch (dbError) {
+      console.error('Failed to save delivery to database:', dbError);
+      // Continue anyway - don't fail the request
+    }
+    
     await logApiCall(requestBody, data, response.status, startTime, 'create-delivery');
     return NextResponse.json(data);
   } catch (error) {
@@ -60,8 +70,18 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint removed - Wolt API venueful endpoints don't support listing deliveries
-// Instead, deliveries are stored locally in Zustand store when created
+/**
+ * GET endpoint to retrieve all deliveries from SQLite database
+ */
+export async function GET() {
+  try {
+    const deliveries = getAllDeliveries();
+    return NextResponse.json({ deliveries });
+  } catch (error) {
+    console.error('Failed to retrieve deliveries:', error);
+    return NextResponse.json({ error: 'Failed to retrieve deliveries' }, { status: 500 });
+  }
+}
 
 // Helper function to log API calls
 // Note: Using global storage for simplicity. For production, consider using:

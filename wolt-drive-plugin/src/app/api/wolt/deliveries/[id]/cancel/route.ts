@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CancelDeliveryRequest } from '@/types/wolt-drive';
+import { updateDeliveryStatus } from '@/lib/db';
 
 export async function PATCH(
   request: NextRequest,
@@ -55,6 +56,14 @@ export async function PATCH(
       };
       await logApiCall(woltOrderReferenceId, requestBody, errorResponse, response.status, startTime);
       return NextResponse.json(errorResponse, { status: response.status });
+    }
+
+    // Update delivery status in database
+    try {
+      updateDeliveryStatus(woltOrderReferenceId, 'cancelled');
+    } catch (dbError) {
+      console.error('Failed to update delivery status in database:', dbError);
+      // Continue anyway - don't fail the request
     }
 
     await logApiCall(woltOrderReferenceId, requestBody, data, response.status, startTime);
