@@ -56,15 +56,35 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/settings')}
-              className="flex items-center gap-2"
-            >
-              <SettingsIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/cart')}
+                className="flex items-center gap-2"
+              >
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline">E-Shop</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/admin/deliveries')}
+                className="flex items-center gap-2"
+              >
+                <Truck className="h-4 w-4" />
+                <span className="hidden sm:inline">All Deliveries</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/settings')}
+                className="flex items-center gap-2"
+              >
+                <SettingsIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Settings</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -119,7 +139,16 @@ export default function Home() {
                 <MultiStepDeliveryForm />
               </div>
             )}
-            {activeTab === 'list' && <DeliveryList />}
+            {activeTab === 'list' && (
+              <div>
+                <p className="text-muted-foreground mb-4">
+                  View all deliveries in the{' '}
+                  <Button variant="link" className="p-0 h-auto" onClick={() => router.push('/admin/deliveries')}>
+                    Admin Deliveries Page
+                  </Button>
+                </p>
+              </div>
+            )}
             {activeTab === 'logs' && <ApiLogs />}
           </div>
         </main>
