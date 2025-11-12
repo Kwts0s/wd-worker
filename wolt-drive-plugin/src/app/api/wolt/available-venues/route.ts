@@ -1,24 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CreateDeliveryRequest } from '@/types/wolt-drive';
+import { AvailableVenuesRequest } from '@/types/wolt-drive';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  let requestBody: CreateDeliveryRequest & { venue_id?: string } | null = null;
-  
+  let requestBody: AvailableVenuesRequest | null = null;
+
   try {
     requestBody = await request.json();
 
     // Use server-side environment variables, fallback to public ones
     const apiToken = process.env.WOLT_API_TOKEN || process.env.NEXT_PUBLIC_WOLT_API_TOKEN;
-    const defaultVenueId = process.env.WOLT_VENUE_ID || process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
+    const merchantId = process.env.WOLT_MERCHANT_ID || process.env.NEXT_PUBLIC_WOLT_MERCHANT_ID;
     const isDevelopment = (process.env.WOLT_IS_DEVELOPMENT || process.env.NEXT_PUBLIC_WOLT_IS_DEVELOPMENT) === 'true';
 
-    // Use venue_id from request body if provided, otherwise use default from env
-    const venueId = requestBody?.venue_id || defaultVenueId;
-
-    if (!apiToken || !venueId) {
+    if (!apiToken || !merchantId) {
       const errorResponse = { error: 'Missing API configuration' };
-      await logApiCall(requestBody, errorResponse, 500, startTime, 'create-delivery');
+      await logApiCall(requestBody, errorResponse, 500, startTime);
       return NextResponse.json(errorResponse, { status: 500 });
     }
 
@@ -26,63 +23,51 @@ export async function POST(request: NextRequest) {
       ? 'https://daas-public-api.development.dev.woltapi.com'
       : 'https://daas-public-api.wolt.com';
 
-    // Remove venue_id from body before sending to Wolt API
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { venue_id, ...cleanRequestBody } = requestBody as CreateDeliveryRequest & { venue_id?: string };
-
     const response = await fetch(
-      `${baseURL}/v1/venues/${venueId}/deliveries`,
+      `${baseURL}/merchants/${merchantId}/available-venues`,
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(cleanRequestBody),
+        body: JSON.stringify(requestBody),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
       const errorResponse = { error: `Wolt API error: ${errorText}` };
-      await logApiCall(requestBody, errorResponse, response.status, startTime, 'create-delivery');
+      await logApiCall(requestBody, errorResponse, response.status, startTime);
       return NextResponse.json(errorResponse, { status: response.status });
     }
 
     const data = await response.json();
-    await logApiCall(requestBody, data, response.status, startTime, 'create-delivery');
+    await logApiCall(requestBody, data, response.status, startTime);
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Create delivery error:', error);
+    console.error('Available venues error:', error);
     const errorResponse = { error: 'Internal server error' };
-    await logApiCall(requestBody, errorResponse, 500, startTime, 'create-delivery');
+    await logApiCall(requestBody, errorResponse, 500, startTime);
     return NextResponse.json(errorResponse, { status: 500 });
   }
 }
 
-// GET endpoint removed - Wolt API venueful endpoints don't support listing deliveries
-// Instead, deliveries are stored locally in Zustand store when created
-
 // Helper function to log API calls
-// Note: Using global storage for simplicity. For production, consider using:
-// - Database storage (PostgreSQL, MongoDB, etc.)
-// - Redis for caching
-// - External logging service (Datadog, LogRocket, etc.)
 async function logApiCall(
   requestBody: unknown,
   responseBody: unknown,
   status: number,
-  startTime: number,
-  type: 'create-delivery' | 'list-deliveries'
+  startTime: number
 ) {
   try {
     const logEntry = {
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       timestamp: new Date().toISOString(),
-      type: type,
+      type: 'available-venues',
       request: {
-        method: type === 'list-deliveries' ? 'GET' : 'POST',
-        url: '/api/wolt/deliveries',
+        method: 'POST',
+        url: '/api/wolt/available-venues',
         body: requestBody,
       },
       response: {
@@ -91,8 +76,8 @@ async function logApiCall(
       },
       duration: Date.now() - startTime,
     };
-    
-    // Store in temporary global (will be replaced with proper storage)
+
+    // Store in temporary global
     if (typeof globalThis !== 'undefined') {
       if (!globalThis.apiLogs) {
         globalThis.apiLogs = [];

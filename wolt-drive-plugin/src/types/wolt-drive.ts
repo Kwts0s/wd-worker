@@ -88,7 +88,59 @@ export interface ShipmentPromiseResponse {
   estimated_pickup_time?: string;
   estimated_delivery_time?: string;
   distance_meters?: number;
+  pickup?: {
+    options?: {
+      scheduled_time?: string;
+    };
+  };
+  dropoff?: {
+    options?: {
+      scheduled_time?: string;
+    };
+  };
 }
+
+// Available Venues Types
+export interface AvailableVenuesRequest {
+  dropoff: {
+    location: {
+      formatted_address: string;
+      coordinates: {
+        lat: number;
+        lon: number;
+      };
+    };
+  };
+  scheduled_dropoff_time?: string; // ISO 8601 timestamp
+}
+
+export interface VenueName {
+  lang: string;
+  value: string;
+}
+
+export interface PreEstimate {
+  pickup_minutes: number;
+  delivery_minutes: number;
+  total_minutes: {
+    min: number;
+    mean: number;
+    max: number;
+  };
+}
+
+export interface AvailableVenue {
+  pickup: {
+    venue_id: string;
+    name: VenueName[];
+    location: Location;
+  };
+  fee: Fee;
+  pre_estimate: PreEstimate;
+  scheduled_dropoff_time?: string;
+}
+
+export type AvailableVenuesResponse = AvailableVenue[];
 
 // Parcel/Package Types
 export interface ParcelDimensions {

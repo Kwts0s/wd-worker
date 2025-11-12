@@ -3,32 +3,21 @@ import { DeliveryQuoteRequest } from '@/types/wolt-drive';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  let requestBody: DeliveryQuoteRequest | null = null;
+  let requestBody: DeliveryQuoteRequest & { venue_id?: string } | null = null;
   
   try {
     requestBody = await request.json();
 
-    // Debug: Log all environment variables
-    console.log('All env vars:', {
-      WOLT_API_TOKEN: process.env.WOLT_API_TOKEN ? '***exists***' : 'missing',
-      NEXT_PUBLIC_WOLT_API_TOKEN: process.env.NEXT_PUBLIC_WOLT_API_TOKEN ? '***exists***' : 'missing',
-      WOLT_VENUE_ID: process.env.WOLT_VENUE_ID ? '***exists***' : 'missing',
-      NEXT_PUBLIC_WOLT_VENUE_ID: process.env.NEXT_PUBLIC_WOLT_VENUE_ID ? '***exists***' : 'missing',
-      NODE_ENV: process.env.NODE_ENV,
-    });
+
 
     // Use server-side environment variables, fallback to public ones
     const apiToken = process.env.WOLT_API_TOKEN || process.env.NEXT_PUBLIC_WOLT_API_TOKEN;
-    const venueId = process.env.WOLT_VENUE_ID || process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
+    const defaultVenueId = process.env.WOLT_VENUE_ID || process.env.NEXT_PUBLIC_WOLT_VENUE_ID;
     const isDevelopment = (process.env.WOLT_IS_DEVELOPMENT || process.env.NEXT_PUBLIC_WOLT_IS_DEVELOPMENT) === 'true';
 
-    console.log('Environment check:', {
-      hasToken: !!apiToken,
-      hasVenueId: !!venueId,
-      isDevelopment,
-      tokenStart: apiToken?.substring(0, 10),
-      venueId: venueId?.substring(0, 10),
-    });
+    // Use venue_id from request body if provided, otherwise use default from env
+    const venueId = requestBody?.venue_id || defaultVenueId;
+
 
     if (!apiToken || !venueId) {
       console.error('Missing API configuration:', { apiToken: !!apiToken, venueId: !!venueId });
@@ -49,13 +38,17 @@ export async function POST(request: NextRequest) {
 
     const woltApiUrl = `${baseURL}/v1/venues/${venueId}/shipment-promises`;
     
+    // Remove venue_id from body before sending to Wolt API
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { venue_id, ...cleanRequestBody } = requestBody as DeliveryQuoteRequest & { venue_id?: string };
+    
     const response = await fetch(woltApiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(cleanRequestBody),
     });
 
     if (!response.ok) {

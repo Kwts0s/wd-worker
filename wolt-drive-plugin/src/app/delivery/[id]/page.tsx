@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useWoltDriveStore } from '@/store/wolt-store';
+import { useCancelDelivery } from '@/hooks/use-wolt-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { DeliveryStatus } from '@/types/wolt-drive';
 import { getDeliveryDisplayName } from '@/lib/delivery-utils';
 import { 
@@ -20,7 +22,9 @@ import {
   ArrowLeft,
   ExternalLink,
   Truck,
-  Info
+  Info,
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 
 function getStatusColor(status: DeliveryStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
@@ -45,7 +49,11 @@ function formatDate(dateString?: string): string {
 export default function DeliveryDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { deliveries, selectedDelivery, selectDelivery } = useWoltDriveStore();
+  const { deliveries, selectedDelivery, selectDelivery, updateDelivery } = useWoltDriveStore();
+  const cancelDeliveryMutation = useCancelDelivery();
+  
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   useEffect(() => {
     const id = params.id as string;
@@ -57,6 +65,36 @@ export default function DeliveryDetailPage() {
 
   // Get delivery from params ID
   const delivery = deliveries.find(d => d.id === params.id);
+
+  const handleCancelDelivery = async () => {
+    if (!delivery || !cancelReason.trim()) {
+      alert('Please provide a cancellation reason');
+      return;
+    }
+
+    try {
+      await cancelDeliveryMutation.mutateAsync({
+        woltOrderReferenceId: delivery.wolt_order_reference_id,
+        request: { reason: cancelReason },
+      });
+      
+      // Update the delivery status locally
+      updateDelivery(delivery.id, { status: 'cancelled' as DeliveryStatus });
+      
+      alert('Delivery cancelled successfully!');
+      setShowCancelDialog(false);
+      setCancelReason('');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`Failed to cancel delivery: ${errorMessage}`);
+    }
+  };
+
+  const canCancelDelivery = delivery && 
+    delivery.status !== 'cancelled' && 
+    delivery.status !== 'delivered' &&
+    delivery.status !== 'picked_up' &&
+    delivery.status !== 'in_transit';
 
   if (!delivery) {
     return (
@@ -103,12 +141,78 @@ export default function DeliveryDetailPage() {
                 <p className="text-sm text-muted-foreground">Delivery ID: {delivery.id}</p>
               </div>
             </div>
-            <Badge variant={getStatusColor(delivery.status)} className="text-base px-4 py-2">
-              {delivery.status.replace('_', ' ').toUpperCase()}
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Badge variant={getStatusColor(delivery.status)} className="text-base px-4 py-2">
+                {delivery.status.replace('_', ' ').toUpperCase()}
+              </Badge>
+              {canCancelDelivery && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowCancelDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Cancel Order
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Cancel Dialog */}
+      {showCancelDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Cancel Delivery
+              </CardTitle>
+              <CardDescription>
+                Are you sure you want to cancel this delivery? This action cannot be undone.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Cancellation Reason *</label>
+                <Input
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="e.g., Customer requested cancellation"
+                  className="mt-1"
+                />
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> Deliveries can only be cancelled before the courier accepts the task. 
+                  If cancellation fails, please contact Wolt support.
+                </p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCancelDialog(false);
+                    setCancelReason('');
+                  }}
+                  disabled={cancelDeliveryMutation.isPending}
+                >
+                  Keep Order
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleCancelDelivery}
+                  disabled={cancelDeliveryMutation.isPending || !cancelReason.trim()}
+                >
+                  {cancelDeliveryMutation.isPending ? 'Cancelling...' : 'Cancel Order'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
