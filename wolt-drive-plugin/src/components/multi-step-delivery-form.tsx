@@ -89,6 +89,9 @@ export function MultiStepDeliveryForm() {
   const handleStep1Complete = (venue: AvailableVenue) => {
     setSelectedVenue(venue);
     setSelectedVenueId(venue.pickup.venue_id);
+    if (venue.scheduled_dropoff_time) {
+    updateFormData({ scheduledDropoffTime: venue.scheduled_dropoff_time });
+    }
     handleNextStep();
   };
 

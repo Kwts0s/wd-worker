@@ -39,7 +39,7 @@ export function Step1SelectVenue({
   useEffect(() => {
     // Only set default time if there's no scheduled time or if it's not user-set
     if (!formData.scheduledDropoffTime || !userSetTime) {
-      const defaultTime = getDefaultScheduledTime(60); // +60 minutes
+      const defaultTime = getDefaultScheduledTime(90); // +60 minutes
       updateFormData({ scheduledDropoffTime: defaultTime });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,7 +84,7 @@ export function Step1SelectVenue({
     // If user hasn't set a custom time OR if the time is less than 1 hour in the future
     // Set to current time + 61 minutes
     if (!userSetTime || !isScheduledMoreThanOneHour(scheduledTime)) {
-      scheduledTime = getDefaultScheduledTime(61); // +61 minutes for the actual request
+      scheduledTime = getDefaultScheduledTime(90); // +61 minutes for the actual request
       updateFormData({ scheduledDropoffTime: scheduledTime });
     }
 
@@ -101,11 +101,15 @@ export function Step1SelectVenue({
       scheduled_dropoff_time: scheduledTime,
     };
 
-    try {
-      await availableVenuesMutation.mutateAsync(request);
-    } catch (error) {
-      console.error('Failed to get available venues:', error);
-    }
+      try {
+        const response = await availableVenuesMutation.mutateAsync(request);
+        // If user hasn't set a custom time, update formData with the first venue's scheduled_dropoff_time
+        if (!userSetTime && response && response.length > 0 && response[0].scheduled_dropoff_time) {
+          updateFormData({ scheduledDropoffTime: response[0].scheduled_dropoff_time });
+        }
+      } catch (error) {
+        console.error('Failed to get available venues:', error);
+      }
   };
 
   const venues = availableVenuesMutation.data || [];
