@@ -139,7 +139,16 @@ export default function Home() {
                 <MultiStepDeliveryForm />
               </div>
             )}
-            {activeTab === 'list' && <DeliveryList />}
+            {activeTab === 'list' && (
+              <div>
+                <p className="text-muted-foreground mb-4">
+                  View all deliveries in the{' '}
+                  <Button variant="link" className="p-0 h-auto" onClick={() => router.push('/admin/deliveries')}>
+                    Admin Deliveries Page
+                  </Button>
+                </p>
+              </div>
+            )}
             {activeTab === 'logs' && <ApiLogs />}
           </div>
         </main>

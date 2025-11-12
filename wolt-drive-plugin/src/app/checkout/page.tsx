@@ -1,0 +1,400 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { ShoppingCart, MapPin, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { usePluginSettings } from '@/lib/settings-store';
+import { calculateScheduledDropoffTime } from '@/lib/schedule-utils';
+import { useWoltDriveStore } from '@/store/wolt-store';
+import type { AvailableVenue, ShipmentPromiseResponse, DeliveryResponse } from '@/types/wolt-drive';
+
+interface CartItem {
+  product_id: number;
+  sku: string;
+  name: string;
+  price: number;
+  quantity: number;
+  weight_gram: number;
+}
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { venueSchedule, smsNotifications, customerSupport, shouldSendSmsToDropoffContact } = usePluginSettings();
+  const { timezone } = useWoltDriveStore();
+  
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [postCode, setPostCode] = useState('');
+  
+  const [availableVenues, setAvailableVenues] = useState<AvailableVenue[]>([]);
+  const [selectedVenue, setSelectedVenue] = useState<AvailableVenue | null>(null);
+  const [shipmentPromise, setShipmentPromise] = useState<ShipmentPromiseResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [trackingUrl, setTrackingUrl] = useState<string>('');
+
+  useEffect(() => {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    }
+  }, []);
+
+  const getCartTotal = () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleAddressBlur = async () => {
+    if (!street || !city || !postCode) return;
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Default coordinates for demo
+      const lat = 37.9838;
+      const lon = 23.7275;
+      
+      const scheduledTime = calculateScheduledDropoffTime(venueSchedule, timezone);
+
+      const response = await fetch('/api/wolt/available-venues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dropoff: {
+            location: {
+              formatted_address: `${street}, ${city}, ${postCode}`,
+              coordinates: { lat, lon }
+            }
+          },
+          scheduled_dropoff_time: scheduledTime
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch available venues');
+
+      const venues = await response.json();
+      setAvailableVenues(venues);
+      
+      // Auto-select first venue and get promise
+      if (venues.length > 0) {
+        await handleVenueSelect(venues[0], lat, lon);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load venues');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVenueSelect = async (venue: AvailableVenue, lat: number, lon: number) => {
+    setSelectedVenue(venue);
+    setLoading(true);
+    
+    try {
+      const scheduledTime = calculateScheduledDropoffTime(venueSchedule, timezone);
+      
+      const response = await fetch('/api/wolt/shipment-promises', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          venue_id: venue.pickup.venue_id,
+          street,
+          city,
+          post_code: postCode,
+          lat,
+          lon,
+          language: 'en',
+          min_preparation_time_minutes: 10,
+          scheduled_dropoff_time: scheduledTime
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to get shipment promise');
+
+      const promise = await response.json();
+      setShipmentPromise(promise);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to get delivery estimate');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!selectedVenue || !shipmentPromise) {
+      setError('Missing venue or shipment promise');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const lat = 37.9838;
+      const lon = 23.7275;
+      const orderNumber = `ORDER-${Date.now()}`;
+      const scheduledTime = calculateScheduledDropoffTime(venueSchedule, timezone);
+
+      const parcels = cart.map(item => ({
+        count: item.quantity,
+        dimensions: {
+          weight_gram: item.weight_gram,
+          width_cm: 20,
+          height_cm: 10,
+          depth_cm: 15
+        },
+        price: {
+          amount: Math.round(item.price * 100),
+          currency: 'EUR'
+        },
+        description: item.name,
+        identifier: item.sku,
+        dropoff_restrictions: {
+          id_check_required: false
+        }
+      }));
+
+      const response = await fetch('/api/wolt/deliveries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          venue_id: selectedVenue.pickup.venue_id,
+          pickup: {
+            options: {
+              min_preparation_time_minutes: 10,
+              scheduled_time: scheduledTime
+            },
+            comment: 'E-shop order'
+          },
+          dropoff: {
+            location: {
+              coordinates: { lat, lon }
+            },
+            comment: 'Please ring the doorbell',
+            options: {
+              is_no_contact: false,
+              scheduled_time: scheduledTime
+            }
+          },
+          price: {
+            amount: Math.round(getCartTotal() * 100),
+            currency: 'EUR'
+          },
+          recipient: {
+            name: customerName,
+            phone_number: customerPhone,
+            email: customerEmail
+          },
+          parcels,
+          shipment_promise_id: shipmentPromise.id,
+          customer_support: customerSupport,
+          merchant_order_reference_id: orderNumber,
+          order_number: orderNumber,
+          sms_notifications: {
+            received: smsNotifications.received
+              .replace('{CUSTOMER_NAME}', customerName)
+              .replace('{STORE_NAME}', 'E-Shop')
+              .replace('{TRACKING_LINK}', 'TRACKING_LINK'),
+            picked_up: smsNotifications.picked_up
+              .replace('{CUSTOMER_NAME}', customerName)
+              .replace('{STORE_NAME}', 'E-Shop')
+              .replace('{TRACKING_LINK}', 'TRACKING_LINK'),
+          },
+          handshake_delivery: {
+            is_required: false,
+            should_send_sms_to_dropoff_contact: shouldSendSmsToDropoffContact
+          }
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to create delivery');
+
+      const deliveryData: DeliveryResponse = await response.json();
+      setTrackingUrl(deliveryData.tracking?.url || '');
+      setSuccess(true);
+      localStorage.removeItem('cart');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create delivery');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 text-center">
+          <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Placed!</h2>
+          <p className="text-gray-600 mb-6">Your order has been successfully placed and a Wolt driver will pick it up soon.</p>
+          {trackingUrl && (
+            <a
+              href={trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline mb-6 block"
+            >
+              Track your delivery →
+            </a>
+          )}
+          <div className="space-y-2">
+            <Button onClick={() => router.push('/cart')} className="w-full">
+              Continue Shopping
+            </Button>
+            <Button onClick={() => router.push('/admin/deliveries')} variant="outline" className="w-full">
+              View in Admin
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <ShoppingCart className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
+            </div>
+            <Button variant="outline" onClick={() => router.push('/cart')}>
+              Back to Cart
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Customer Information */}
+          <Card className="p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Customer Information</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <Input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="John Doe" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                <Input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="+30 210 1234567" required />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <Input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="john@example.com" required />
+              </div>
+            </div>
+          </Card>
+
+          {/* Delivery Address */}
+          <Card className="p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Delivery Address
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
+                <Input value={street} onChange={e => setStreet(e.target.value)} onBlur={handleAddressBlur} placeholder="123 Main St" required />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                  <Input value={city} onChange={e => setCity(e.target.value)} onBlur={handleAddressBlur} placeholder="Athens" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Post Code *</label>
+                  <Input value={postCode} onChange={e => setPostCode(e.target.value)} onBlur={handleAddressBlur} placeholder="10431" required />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Venue & Delivery Estimate */}
+          {availableVenues.length > 0 && selectedVenue && shipmentPromise && (
+            <Card className="p-6 bg-blue-50 border-blue-200">
+              <h3 className="font-semibold text-gray-900 mb-3">Delivery Estimate</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Pickup Location:</span>
+                  <span className="font-medium">{selectedVenue.pickup.name[0]?.value}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Delivery Fee:</span>
+                  <span className="font-semibold text-blue-600">€{((shipmentPromise.fee?.amount || 0) / 100).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Estimated Time:</span>
+                  <span className="font-medium">{selectedVenue.pre_estimate.total_minutes.mean} minutes</span>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Order Summary */}
+          <Card className="p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
+            <div className="space-y-3 mb-4">
+              {cart.map(item => (
+                <div key={item.product_id} className="flex justify-between text-sm">
+                  <span className="text-gray-700">{item.name} x{item.quantity}</span>
+                  <span className="font-medium">€{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Subtotal</span>
+                <span className="font-semibold">€{getCartTotal().toFixed(2)}</span>
+              </div>
+              {shipmentPromise && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">Delivery Fee</span>
+                  <span className="font-semibold">€{((shipmentPromise.fee?.amount || 0) / 100).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                <span>Total</span>
+                <span className="text-blue-600">
+                  €{(getCartTotal() + ((shipmentPromise?.fee?.amount || 0) / 100)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </Card>
+
+          {error && (
+            <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+
+          <Button
+            onClick={handlePlaceOrder}
+            disabled={loading || !selectedVenue || !shipmentPromise || !customerName || !customerPhone || !customerEmail}
+            className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Place Order & Pay'
+            )}
+          </Button>
+        </div>
+      </main>
+    </div>
+  );
+}
