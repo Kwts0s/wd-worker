@@ -2,14 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { ShoppingCart, MapPin, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ShoppingCart, MapPin, Loader2, CheckCircle2, AlertCircle, Map, Calendar } from 'lucide-react';
 import { usePluginSettings } from '@/lib/settings-store';
-import { calculateScheduledDropoffTime } from '@/lib/schedule-utils';
+import { calculateScheduledDropoffTime, hasEnoughTimeForImmediateDelivery, getAvailableDeliveryDates, getAvailableTimeSlots } from '@/lib/schedule-utils';
 import { useWoltDriveStore } from '@/store/wolt-store';
 import type { AvailableVenue, ShipmentPromiseResponse, DeliveryResponse } from '@/types/wolt-drive';
+
+// Dynamic import for location picker to avoid SSR issues
+const LocationPicker = dynamic(() => import('@/components/location-picker').then(mod => ({ default: mod.LocationPicker })), {
+  ssr: false,
+  loading: () => <div className="h-[400px] bg-muted rounded-lg flex items-center justify-center">Loading map...</div>
+});
 
 interface CartItem {
   product_id: number;
@@ -32,6 +39,13 @@ export default function CheckoutPage() {
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
   const [postCode, setPostCode] = useState('');
+  const [latitude, setLatitude] = useState('37.9838');
+  const [longitude, setLongitude] = useState('23.7275');
+  const [dropoffComment, setDropoffComment] = useState('');
+  const [showMap, setShowMap] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [needsScheduledDelivery, setNeedsScheduledDelivery] = useState(false);
   
   const [availableVenues, setAvailableVenues] = useState<AvailableVenue[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<AvailableVenue | null>(null);
@@ -48,7 +62,21 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  useEffect(() => {
+    // Check if venue has enough time for immediate delivery
+    const canDeliverNow = hasEnoughTimeForImmediateDelivery(venueSchedule);
+    setNeedsScheduledDelivery(!canDeliverNow);
+  }, [venueSchedule]);
+
   const getCartTotal = () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleLocationChange = (location: { street: string; city: string; postCode: string; latitude: string; longitude: string }) => {
+    setStreet(location.street);
+    setCity(location.city);
+    setPostCode(location.postCode);
+    setLatitude(location.latitude);
+    setLongitude(location.longitude);
+  };
 
   const handleAddressBlur = async () => {
     if (!street || !city || !postCode) return;
@@ -57,11 +85,16 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      // Default coordinates for demo
-      const lat = 37.9838;
-      const lon = 23.7275;
+      const lat = parseFloat(latitude);
+      const lon = parseFloat(longitude);
       
-      const scheduledTime = calculateScheduledDropoffTime(venueSchedule, timezone);
+      let scheduledTimeForApi: string;
+      if (needsScheduledDelivery && scheduledDate && scheduledTime) {
+        // Use customer-selected scheduled time
+        scheduledTimeForApi = `${scheduledDate}T${scheduledTime}:00.000Z`;
+      } else {
+        scheduledTimeForApi = calculateScheduledDropoffTime(venueSchedule, timezone);
+      }
 
       const response = await fetch('/api/wolt/available-venues', {
         method: 'POST',
@@ -73,7 +106,7 @@ export default function CheckoutPage() {
               coordinates: { lat, lon }
             }
           },
-          scheduled_dropoff_time: scheduledTime
+          scheduled_dropoff_time: scheduledTimeForApi
         })
       });
 
@@ -98,7 +131,12 @@ export default function CheckoutPage() {
     setLoading(true);
     
     try {
-      const scheduledTime = calculateScheduledDropoffTime(venueSchedule, timezone);
+      let scheduledTimeToUse: string;
+      if (needsScheduledDelivery && scheduledDate && scheduledTime) {
+        scheduledTimeToUse = `${scheduledDate}T${scheduledTime}:00.000Z`;
+      } else {
+        scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone);
+      }
       
       const response = await fetch('/api/wolt/shipment-promises', {
         method: 'POST',
@@ -112,7 +150,7 @@ export default function CheckoutPage() {
           lon,
           language: 'en',
           min_preparation_time_minutes: 10,
-          scheduled_dropoff_time: scheduledTime
+          scheduled_dropoff_time: scheduledTimeToUse
         })
       });
 
@@ -133,14 +171,25 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (needsScheduledDelivery && (!scheduledDate || !scheduledTime)) {
+      setError('Please select a delivery date and time');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const lat = 37.9838;
-      const lon = 23.7275;
+      const lat = parseFloat(latitude);
+      const lon = parseFloat(longitude);
       const orderNumber = `ORDER-${Date.now()}`;
-      const scheduledTime = calculateScheduledDropoffTime(venueSchedule, timezone);
+      
+      let scheduledTimeToUse: string;
+      if (needsScheduledDelivery && scheduledDate && scheduledTime) {
+        scheduledTimeToUse = `${scheduledDate}T${scheduledTime}:00.000Z`;
+      } else {
+        scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone);
+      }
 
       const parcels = cart.map(item => ({
         count: item.quantity,
@@ -169,7 +218,7 @@ export default function CheckoutPage() {
           pickup: {
             options: {
               min_preparation_time_minutes: 10,
-              scheduled_time: scheduledTime
+              scheduled_time: scheduledTimeToUse
             },
             comment: 'E-shop order'
           },
@@ -177,10 +226,10 @@ export default function CheckoutPage() {
             location: {
               coordinates: { lat, lon }
             },
-            comment: 'Please ring the doorbell',
+            comment: dropoffComment || 'Please ring the doorbell',
             options: {
               is_no_contact: false,
-              scheduled_time: scheduledTime
+              scheduled_time: scheduledTimeToUse
             }
           },
           price: {
@@ -317,8 +366,108 @@ export default function CheckoutPage() {
                   <Input value={postCode} onChange={e => setPostCode(e.target.value)} onBlur={handleAddressBlur} placeholder="10431" required />
                 </div>
               </div>
+              
+              {/* Show Map Button */}
+              <div className="pt-2">
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => setShowMap(!showMap)}
+                  className="w-full flex items-center justify-center gap-2"
+                >
+                  <Map className="h-4 w-4" />
+                  {showMap ? 'Hide Map' : 'Show Map - Select Precise Location'}
+                </Button>
+              </div>
+
+              {/* Map Picker */}
+              {showMap && (
+                <div className="mt-4">
+                  <LocationPicker
+                    street={street}
+                    city={city}
+                    postCode={postCode}
+                    latitude={latitude}
+                    longitude={longitude}
+                    onLocationChange={handleLocationChange}
+                  />
+                </div>
+              )}
+
+              {/* Dropoff Comment */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Instructions (Optional)</label>
+                <Input 
+                  value={dropoffComment} 
+                  onChange={e => setDropoffComment(e.target.value)} 
+                  placeholder="e.g., Please ring the doorbell, Leave at door" 
+                />
+                <p className="text-xs text-gray-500 mt-1">Add any special instructions for the delivery driver</p>
+              </div>
             </div>
           </Card>
+
+          {/* Venue Closing Warning */}
+          {needsScheduledDelivery && (
+            <Card className="p-6 bg-orange-50 border-orange-200">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-2">Venue Closing Soon</h3>
+                  <p className="text-sm text-gray-700 mb-4">
+                    The venue will close soon and cannot fulfill immediate delivery orders. 
+                    Please schedule your delivery for tomorrow or a later date during venue operating hours.
+                  </p>
+                  
+                  {/* Scheduled Delivery Selection */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <Calendar className="h-4 w-4 inline mr-1" />
+                        Select Delivery Date *
+                      </label>
+                      <select
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Choose a date</option>
+                        {getAvailableDeliveryDates().map((date: { value: string; label: string }) => (
+                          <option key={date.value} value={date.value}>
+                            {date.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Select Delivery Time *
+                      </label>
+                      <select
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                        disabled={!scheduledDate}
+                      >
+                        <option value="">Choose a time</option>
+                        {getAvailableTimeSlots(venueSchedule).map((slot: { value: string; label: string }) => (
+                          <option key={slot.value} value={slot.value}>
+                            {slot.label}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Venue hours: {venueSchedule.openTime} - {venueSchedule.closeTime}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* Venue & Delivery Estimate */}
           {availableVenues.length > 0 && selectedVenue && shipmentPromise && (
