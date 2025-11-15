@@ -3,10 +3,14 @@ import { VenueSchedule } from './settings-store';
 /**
  * Calculate the scheduled dropoff time based on venue hours
  * If current time is outside venue hours, schedule for next day opening time
+ * @param venueSchedule - The venue's opening hours
+ * @param timezone - The timezone (default: 'Europe/Athens')
+ * @param preparationMinutes - Minimum preparation time in minutes (default: 60)
  */
 export function calculateScheduledDropoffTime(
   venueSchedule: VenueSchedule,
-  timezone: string = 'Europe/Athens'
+  timezone: string = 'Europe/Athens',
+  preparationMinutes: number = 60
 ): string {
   const now = new Date();
   
@@ -25,26 +29,29 @@ export function calculateScheduledDropoffTime(
   
   let scheduledDate = new Date(now);
   
-  // If current time is before opening time, schedule for today's opening time
+  // If current time is before opening time, schedule for today's opening time + prep time
   if (currentTimeInMinutes < openTimeInMinutes) {
     scheduledDate.setHours(openHour, openMinute, 0, 0);
+    scheduledDate = new Date(scheduledDate.getTime() + preparationMinutes * 60 * 1000);
   }
-  // If current time is after closing time, schedule for tomorrow's opening time
+  // If current time is after closing time, schedule for tomorrow's opening time + prep time
   else if (currentTimeInMinutes >= closeTimeInMinutes) {
     scheduledDate.setDate(scheduledDate.getDate() + 1);
     scheduledDate.setHours(openHour, openMinute, 0, 0);
+    scheduledDate = new Date(scheduledDate.getTime() + preparationMinutes * 60 * 1000);
   }
-  // If within hours, add 30 minutes preparation time
+  // If within hours, add preparation time
   else {
-    scheduledDate = new Date(now.getTime() + 30 * 60 * 1000); // Add 30 minutes
+    scheduledDate = new Date(now.getTime() + preparationMinutes * 60 * 1000);
     
     // Make sure scheduled time doesn't exceed closing time
     const scheduledTimeInMinutes = scheduledDate.getHours() * 60 + scheduledDate.getMinutes();
     if (scheduledTimeInMinutes > closeTimeInMinutes) {
-      // Schedule for tomorrow's opening time
+      // Schedule for tomorrow's opening time + prep time
       scheduledDate = new Date(now);
       scheduledDate.setDate(scheduledDate.getDate() + 1);
       scheduledDate.setHours(openHour, openMinute, 0, 0);
+      scheduledDate = new Date(scheduledDate.getTime() + preparationMinutes * 60 * 1000);
     }
   }
   

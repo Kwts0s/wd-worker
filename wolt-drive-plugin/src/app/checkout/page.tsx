@@ -29,7 +29,7 @@ interface CartItem {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { venueSchedule, smsNotifications, customerSupport, shouldSendSmsToDropoffContact } = usePluginSettings();
+  const { venueSchedule, smsNotifications, customerSupport, shouldSendSmsToDropoffContact, preparationTimeMinutes } = usePluginSettings();
   const { timezone } = useWoltDriveStore();
   
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -45,7 +45,9 @@ export default function CheckoutPage() {
   const [showMap, setShowMap] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
-  const [needsScheduledDelivery, setNeedsScheduledDelivery] = useState(false);
+  const [useScheduledDelivery, setUseScheduledDelivery] = useState(false);
+  const [canDeliverASAP, setCanDeliverASAP] = useState(true);
+  const [geocoding, setGeocoding] = useState(false);
   
   const [availableVenues, setAvailableVenues] = useState<AvailableVenue[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<AvailableVenue | null>(null);
@@ -65,8 +67,49 @@ export default function CheckoutPage() {
   useEffect(() => {
     // Check if venue has enough time for immediate delivery
     const canDeliverNow = hasEnoughTimeForImmediateDelivery(venueSchedule);
-    setNeedsScheduledDelivery(!canDeliverNow);
+    setCanDeliverASAP(canDeliverNow);
+    // Force scheduled delivery if venue is closing soon
+    if (!canDeliverNow) {
+      setUseScheduledDelivery(true);
+    }
   }, [venueSchedule]);
+
+  // Geocode address when it changes
+  useEffect(() => {
+    const geocodeAddress = async () => {
+      if (!street || !city) return;
+      
+      setGeocoding(true);
+      try {
+        const searchQuery = `${street}, ${city}${postCode ? ', ' + postCode : ''}`;
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&addressdetails=1&limit=1`,
+          {
+            headers: {
+              'User-Agent': 'WoltDrivePlugin/1.0',
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0) {
+            const result = data[0];
+            setLatitude(result.lat);
+            setLongitude(result.lon);
+          }
+        }
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        // Don't show error to user, just keep existing coordinates
+      } finally {
+        setGeocoding(false);
+      }
+    };
+
+    const timeoutId = setTimeout(geocodeAddress, 1000); // Debounce for 1 second
+    return () => clearTimeout(timeoutId);
+  }, [street, city, postCode]);
 
   const getCartTotal = () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -89,11 +132,11 @@ export default function CheckoutPage() {
       const lon = parseFloat(longitude);
       
       let scheduledTimeForApi: string;
-      if (needsScheduledDelivery && scheduledDate && scheduledTime) {
+      if (useScheduledDelivery && scheduledDate && scheduledTime) {
         // Use customer-selected scheduled time
         scheduledTimeForApi = `${scheduledDate}T${scheduledTime}:00.000Z`;
       } else {
-        scheduledTimeForApi = calculateScheduledDropoffTime(venueSchedule, timezone);
+        scheduledTimeForApi = calculateScheduledDropoffTime(venueSchedule, timezone, preparationTimeMinutes);
       }
 
       const response = await fetch('/api/wolt/available-venues', {
@@ -132,10 +175,10 @@ export default function CheckoutPage() {
     
     try {
       let scheduledTimeToUse: string;
-      if (needsScheduledDelivery && scheduledDate && scheduledTime) {
+      if (useScheduledDelivery && scheduledDate && scheduledTime) {
         scheduledTimeToUse = `${scheduledDate}T${scheduledTime}:00.000Z`;
       } else {
-        scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone);
+        scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone, preparationTimeMinutes);
       }
       
       const response = await fetch('/api/wolt/shipment-promises', {
@@ -149,7 +192,7 @@ export default function CheckoutPage() {
           lat,
           lon,
           language: 'en',
-          min_preparation_time_minutes: 10,
+          min_preparation_time_minutes: preparationTimeMinutes,
           scheduled_dropoff_time: scheduledTimeToUse
         })
       });
@@ -171,7 +214,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (needsScheduledDelivery && (!scheduledDate || !scheduledTime)) {
+    if (useScheduledDelivery && (!scheduledDate || !scheduledTime)) {
       setError('Please select a delivery date and time');
       return;
     }
@@ -185,10 +228,10 @@ export default function CheckoutPage() {
       const orderNumber = `ORDER-${Date.now()}`;
       
       let scheduledTimeToUse: string;
-      if (needsScheduledDelivery && scheduledDate && scheduledTime) {
+      if (useScheduledDelivery && scheduledDate && scheduledTime) {
         scheduledTimeToUse = `${scheduledDate}T${scheduledTime}:00.000Z`;
       } else {
-        scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone);
+        scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone, preparationTimeMinutes);
       }
 
       const parcels = cart.map(item => ({
@@ -350,6 +393,12 @@ export default function CheckoutPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               Delivery Address
+              {geocoding && (
+                <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Updating location...
+                </span>
+              )}
             </h2>
             <div className="space-y-4">
               <div>
@@ -365,6 +414,11 @@ export default function CheckoutPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Post Code *</label>
                   <Input value={postCode} onChange={e => setPostCode(e.target.value)} onBlur={handleAddressBlur} placeholder="10431" required />
                 </div>
+              </div>
+              
+              {/* Current Coordinates Display */}
+              <div className="text-xs text-gray-500 flex items-center gap-2">
+                <span>Current coordinates: {latitude}, {longitude}</span>
               </div>
               
               {/* Show Map Button */}
@@ -407,67 +461,118 @@ export default function CheckoutPage() {
             </div>
           </Card>
 
-          {/* Venue Closing Warning */}
-          {needsScheduledDelivery && (
-            <Card className="p-6 bg-orange-50 border-orange-200">
-              <div className="flex items-start gap-3">
+          {/* Delivery Time Selection */}
+          <Card className="p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Delivery Time</h2>
+            
+            {/* Warning if venue is closed or closing soon */}
+            {!canDeliverASAP && (
+              <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-2">Venue Closing Soon</h3>
-                  <p className="text-sm text-gray-700 mb-4">
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium text-orange-900 mb-1">Venue Closing Soon</p>
+                  <p>
                     The venue will close soon and cannot fulfill immediate delivery orders. 
-                    Please schedule your delivery for tomorrow or a later date during venue operating hours.
+                    Please schedule your delivery for a later time.
                   </p>
-                  
-                  {/* Scheduled Delivery Selection */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <Calendar className="h-4 w-4 inline mr-1" />
-                        Select Delivery Date *
-                      </label>
-                      <select
-                        value={scheduledDate}
-                        onChange={(e) => setScheduledDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      >
-                        <option value="">Choose a date</option>
-                        {getAvailableDeliveryDates().map((date: { value: string; label: string }) => (
-                          <option key={date.value} value={date.value}>
-                            {date.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Select Delivery Time *
-                      </label>
-                      <select
-                        value={scheduledTime}
-                        onChange={(e) => setScheduledTime(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                        disabled={!scheduledDate}
-                      >
-                        <option value="">Choose a time</option>
-                        {getAvailableTimeSlots(venueSchedule).map((slot: { value: string; label: string }) => (
-                          <option key={slot.value} value={slot.value}>
-                            {slot.label}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Venue hours: {venueSchedule.openTime} - {venueSchedule.closeTime}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
-            </Card>
-          )}
+            )}
+
+            {/* ASAP vs Scheduled Toggle */}
+            {canDeliverASAP ? (
+              <div className="space-y-4">
+                {/* ASAP Delivery Option */}
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    id="asap-delivery"
+                    name="delivery-type"
+                    checked={!useScheduledDelivery}
+                    onChange={() => setUseScheduledDelivery(false)}
+                    className="mt-1 h-4 w-4 text-blue-600"
+                  />
+                  <label htmlFor="asap-delivery" className="flex-1 cursor-pointer">
+                    <div className="font-medium text-gray-900">ASAP Delivery</div>
+                    <p className="text-sm text-gray-600">
+                      Delivery within approximately {preparationTimeMinutes} minutes (venue hours: {venueSchedule.openTime} - {venueSchedule.closeTime})
+                    </p>
+                  </label>
+                </div>
+
+                {/* Scheduled Delivery Option */}
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    id="scheduled-delivery"
+                    name="delivery-type"
+                    checked={useScheduledDelivery}
+                    onChange={() => setUseScheduledDelivery(true)}
+                    className="mt-1 h-4 w-4 text-blue-600"
+                  />
+                  <label htmlFor="scheduled-delivery" className="flex-1 cursor-pointer">
+                    <div className="font-medium text-gray-900">Schedule Delivery</div>
+                    <p className="text-sm text-gray-600">
+                      Choose a specific date and time for delivery
+                    </p>
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-700 mb-4">
+                <p className="font-medium">Scheduled Delivery Required</p>
+                <p>Select a date and time when the venue will be open.</p>
+              </div>
+            )}
+
+            {/* Scheduled Delivery Selection */}
+            {useScheduledDelivery && (
+              <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Calendar className="h-4 w-4 inline mr-1" />
+                    Select Delivery Date *
+                  </label>
+                  <select
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Choose a date</option>
+                    {getAvailableDeliveryDates().map((date: { value: string; label: string }) => (
+                      <option key={date.value} value={date.value}>
+                        {date.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Delivery Time *
+                  </label>
+                  <select
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                    disabled={!scheduledDate}
+                  >
+                    <option value="">Choose a time</option>
+                    {getAvailableTimeSlots(venueSchedule).map((slot: { value: string; label: string }) => (
+                      <option key={slot.value} value={slot.value}>
+                        {slot.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Venue hours: {venueSchedule.openTime} - {venueSchedule.closeTime}
+                  </p>
+                </div>
+              </div>
+            )}
+          </Card>
 
           {/* Venue & Delivery Estimate */}
           {availableVenues.length > 0 && selectedVenue && shipmentPromise && (
