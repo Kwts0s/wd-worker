@@ -23,6 +23,7 @@ interface PluginSettings {
   customerSupport: CustomerSupport;
   shouldSendSmsToDropoffContact: boolean;
   deliveryFee: number; // in cents
+  preparationTimeMinutes: number; // Minimum preparation time in minutes
   
   // Actions
   updateVenueSchedule: (schedule: VenueSchedule) => void;
@@ -30,6 +31,7 @@ interface PluginSettings {
   updateCustomerSupport: (support: CustomerSupport) => void;
   setShouldSendSmsToDropoffContact: (value: boolean) => void;
   setDeliveryFee: (fee: number) => void;
+  setPreparationTimeMinutes: (minutes: number) => void;
 }
 
 export const usePluginSettings = create<PluginSettings>()(
@@ -51,6 +53,7 @@ export const usePluginSettings = create<PluginSettings>()(
       },
       shouldSendSmsToDropoffContact: true,
       deliveryFee: 0, // Will use Wolt's calculated fee
+      preparationTimeMinutes: 60, // Default 60 minutes for ASAP deliveries
 
       // Actions
       updateVenueSchedule: (schedule) => set({ venueSchedule: schedule }),
@@ -58,6 +61,7 @@ export const usePluginSettings = create<PluginSettings>()(
       updateCustomerSupport: (support) => set({ customerSupport: support }),
       setShouldSendSmsToDropoffContact: (value) => set({ shouldSendSmsToDropoffContact: value }),
       setDeliveryFee: (fee) => set({ deliveryFee: fee }),
+      setPreparationTimeMinutes: (minutes) => set({ preparationTimeMinutes: minutes }),
     }),
     {
       name: 'plugin-settings-storage',

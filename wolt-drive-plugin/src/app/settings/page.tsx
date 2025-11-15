@@ -16,14 +16,17 @@ export default function SettingsPage() {
     smsNotifications,
     customerSupport,
     shouldSendSmsToDropoffContact,
+    preparationTimeMinutes,
     updateVenueSchedule,
     updateSMSNotifications,
     updateCustomerSupport,
     setShouldSendSmsToDropoffContact,
+    setPreparationTimeMinutes,
   } = usePluginSettings();
 
   const [openTime, setOpenTime] = useState(venueSchedule.openTime);
   const [closeTime, setCloseTime] = useState(venueSchedule.closeTime);
+  const [prepTime, setPrepTime] = useState(preparationTimeMinutes.toString());
   const [smsReceived, setSmsReceived] = useState(smsNotifications.received);
   const [smsPickedUp, setSmsPickedUp] = useState(smsNotifications.picked_up);
   const [supportEmail, setSupportEmail] = useState(customerSupport.email);
@@ -33,6 +36,7 @@ export default function SettingsPage() {
 
   const handleSavePluginSettings = () => {
     updateVenueSchedule({ openTime, closeTime });
+    setPreparationTimeMinutes(parseInt(prepTime) || 60);
     updateSMSNotifications({ received: smsReceived, picked_up: smsPickedUp });
     updateCustomerSupport({ email: supportEmail, phone_number: supportPhone, url: supportUrl });
     setShouldSendSmsToDropoffContact(sendSms);
@@ -102,8 +106,23 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Current schedule: {openTime} - {closeTime}
+            <div className="mt-4">
+              <label className="text-sm font-medium">Preparation Time (minutes)</label>
+              <Input
+                type="number"
+                value={prepTime}
+                onChange={(e) => setPrepTime(e.target.value)}
+                min="30"
+                max="180"
+                className="mt-1"
+                placeholder="60"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Minimum time needed to prepare orders for delivery (30-180 minutes). This prevents "too early" API errors.
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4">
+              Current schedule: {openTime} - {closeTime} | Prep time: {prepTime} minutes
             </p>
           </CardContent>
         </Card>
