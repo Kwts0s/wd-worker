@@ -14,20 +14,24 @@ export function calculateScheduledDropoffTime(
 ): string {
   const now = new Date();
   
+  // Add 5-minute safety buffer to prevent "too early" errors
+  const safetyBufferMs = 5 * 60 * 1000;
+  const baseTime = new Date(now.getTime() + safetyBufferMs);
+  
   // Parse venue hours
   const [openHour, openMinute] = venueSchedule.openTime.split(':').map(Number);
   const [closeHour, closeMinute] = venueSchedule.closeTime.split(':').map(Number);
   
   // Get current time components in the specified timezone
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  const currentHour = baseTime.getHours();
+  const currentMinute = baseTime.getMinutes();
   
   // Convert times to minutes since midnight for easier comparison
   const currentTimeInMinutes = currentHour * 60 + currentMinute;
   const openTimeInMinutes = openHour * 60 + openMinute;
   const closeTimeInMinutes = closeHour * 60 + closeMinute;
   
-  let scheduledDate = new Date(now);
+  let scheduledDate = new Date(baseTime);
   
   // If current time is before opening time, schedule for today's opening time + prep time
   if (currentTimeInMinutes < openTimeInMinutes) {
@@ -42,13 +46,13 @@ export function calculateScheduledDropoffTime(
   }
   // If within hours, add preparation time
   else {
-    scheduledDate = new Date(now.getTime() + preparationMinutes * 60 * 1000);
+    scheduledDate = new Date(baseTime.getTime() + preparationMinutes * 60 * 1000);
     
     // Make sure scheduled time doesn't exceed closing time
     const scheduledTimeInMinutes = scheduledDate.getHours() * 60 + scheduledDate.getMinutes();
     if (scheduledTimeInMinutes > closeTimeInMinutes) {
       // Schedule for tomorrow's opening time + prep time
-      scheduledDate = new Date(now);
+      scheduledDate = new Date(baseTime);
       scheduledDate.setDate(scheduledDate.getDate() + 1);
       scheduledDate.setHours(openHour, openMinute, 0, 0);
       scheduledDate = new Date(scheduledDate.getTime() + preparationMinutes * 60 * 1000);

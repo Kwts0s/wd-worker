@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { ShoppingCart, MapPin, Loader2, CheckCircle2, AlertCircle, Map, Calendar } from 'lucide-react';
+import { ShoppingCart, MapPin, Loader2, CheckCircle2, AlertCircle, Map, Calendar, RefreshCw } from 'lucide-react';
 import { usePluginSettings } from '@/lib/settings-store';
 import { calculateScheduledDropoffTime, hasEnoughTimeForImmediateDelivery, getAvailableDeliveryDates, getAvailableTimeSlots } from '@/lib/schedule-utils';
 import { useWoltDriveStore } from '@/store/wolt-store';
@@ -111,6 +111,13 @@ export default function CheckoutPage() {
     return () => clearTimeout(timeoutId);
   }, [street, city, postCode]);
 
+  // Trigger venue refresh when scheduled delivery changes
+  useEffect(() => {
+    if (useScheduledDelivery && scheduledDate && scheduledTime && street && city && postCode) {
+      fetchAvailableVenues();
+    }
+  }, [scheduledDate, scheduledTime]);
+
   const getCartTotal = () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleLocationChange = (location: { street: string; city: string; postCode: string; latitude: string; longitude: string }) => {
@@ -121,7 +128,7 @@ export default function CheckoutPage() {
     setLongitude(location.longitude);
   };
 
-  const handleAddressBlur = async () => {
+  const fetchAvailableVenues = async () => {
     if (!street || !city || !postCode) return;
     
     setLoading(true);
@@ -167,6 +174,10 @@ export default function CheckoutPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddressBlur = () => {
+    fetchAvailableVenues();
   };
 
   const handleVenueSelect = async (venue: AvailableVenue, lat: number, lon: number) => {
@@ -463,7 +474,26 @@ export default function CheckoutPage() {
 
           {/* Delivery Time Selection */}
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Delivery Time</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Delivery Time</h2>
+              {street && city && postCode && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchAvailableVenues}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Refresh
+                </Button>
+              )}
+            </div>
             
             {/* Warning if venue is closed or closing soon */}
             {!canDeliverASAP && (
