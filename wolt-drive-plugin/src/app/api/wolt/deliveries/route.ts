@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { venue_id, ...cleanRequestBody } = requestBody as CreateDeliveryRequest & { venue_id?: string };
 
-    const response = await fetch(
+    let response = await fetch(
       `${baseURL}/v1/venues/${venueId}/deliveries`,
       {
         method: 'POST',
@@ -43,11 +43,86 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // Handle INVALID_SCHEDULED_DROPOFF_TIME error with retry
     if (!response.ok) {
       const errorText = await response.text();
-      const errorResponse = { error: `Wolt API error: ${errorText}` };
-      await logApiCall(requestBody, errorResponse, response.status, startTime, 'create-delivery');
-      return NextResponse.json(errorResponse, { status: response.status });
+      
+      // Check if error is INVALID_SCHEDULED_DROPOFF_TIME
+      if (errorText.includes('INVALID_SCHEDULED_DROPOFF_TIME')) {
+        console.log('Received INVALID_SCHEDULED_DROPOFF_TIME error, attempting to parse earliest delivery time...');
+        
+        // Try to parse the error response to get the earliest possible time
+        try {
+          const errorJson = JSON.parse(errorText);
+          
+          // Look for earliest_scheduled_dropoff_time in error response
+          const earliestTime = errorJson.earliest_scheduled_dropoff_time || 
+                              errorJson.details?.earliest_scheduled_dropoff_time;
+          
+          if (earliestTime) {
+            console.log(`Found earliest time: ${earliestTime}, retrying with updated schedule...`);
+            
+            // Update the scheduled times in the request
+            const retryRequestBody = {
+              ...cleanRequestBody,
+              pickup: {
+                ...cleanRequestBody.pickup,
+                options: {
+                  ...cleanRequestBody.pickup.options,
+                  scheduled_time: earliestTime
+                }
+              },
+              dropoff: {
+                ...cleanRequestBody.dropoff,
+                options: {
+                  ...cleanRequestBody.dropoff.options,
+                  scheduled_time: earliestTime
+                }
+              }
+            };
+            
+            // Retry the request with updated time
+            response = await fetch(
+              `${baseURL}/v1/venues/${venueId}/deliveries`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(retryRequestBody),
+              }
+            );
+            
+            // If retry fails, return the retry error
+            if (!response.ok) {
+              const retryErrorText = await response.text();
+              const errorResponse = { error: `Wolt API error after retry: ${retryErrorText}` };
+              await logApiCall(requestBody, errorResponse, response.status, startTime, 'create-delivery');
+              return NextResponse.json(errorResponse, { status: response.status });
+            }
+            
+            // If retry succeeds, continue with normal flow
+            console.log('Retry successful with earliest scheduled time');
+          } else {
+            // No earliest time found in error, return original error
+            const errorResponse = { error: `Wolt API error: ${errorText}` };
+            await logApiCall(requestBody, errorResponse, response.status, startTime, 'create-delivery');
+            return NextResponse.json(errorResponse, { status: response.status });
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          // Return original error if parsing fails
+          const errorResponse = { error: `Wolt API error: ${errorText}` };
+          await logApiCall(requestBody, errorResponse, response.status, startTime, 'create-delivery');
+          return NextResponse.json(errorResponse, { status: response.status });
+        }
+      } else {
+        // Not an INVALID_SCHEDULED_DROPOFF_TIME error, return as-is
+        const errorResponse = { error: `Wolt API error: ${errorText}` };
+        await logApiCall(requestBody, errorResponse, response.status, startTime, 'create-delivery');
+        return NextResponse.json(errorResponse, { status: response.status });
+      }
     }
 
     const data = await response.json() as DeliveryResponse;

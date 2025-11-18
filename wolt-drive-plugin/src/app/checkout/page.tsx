@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ShoppingCart, MapPin, Loader2, CheckCircle2, AlertCircle, Map, Calendar, RefreshCw } from 'lucide-react';
 import { usePluginSettings } from '@/lib/settings-store';
-import { calculateScheduledDropoffTime, hasEnoughTimeForImmediateDelivery, getAvailableDeliveryDates, getAvailableTimeSlots } from '@/lib/schedule-utils';
+import { calculateScheduledDropoffTime, hasEnoughTimeForImmediateDelivery, getAvailableDeliveryDates, getAvailableTimeSlots, isVenueClosed } from '@/lib/schedule-utils';
 import { useWoltDriveStore } from '@/store/wolt-store';
 import type { AvailableVenue, ShipmentPromiseResponse, DeliveryResponse } from '@/types/wolt-drive';
 
@@ -47,6 +47,7 @@ export default function CheckoutPage() {
   const [scheduledTime, setScheduledTime] = useState('');
   const [useScheduledDelivery, setUseScheduledDelivery] = useState(false);
   const [canDeliverASAP, setCanDeliverASAP] = useState(true);
+  const [venueClosed, setVenueClosed] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   
   const [availableVenues, setAvailableVenues] = useState<AvailableVenue[]>([]);
@@ -65,14 +66,18 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
-    // Check if venue has enough time for immediate delivery
-    const canDeliverNow = hasEnoughTimeForImmediateDelivery(venueSchedule);
+    // Check if venue is closed or closing soon
+    const isClosed = isVenueClosed(venueSchedule, timezone);
+    const canDeliverNow = hasEnoughTimeForImmediateDelivery(venueSchedule, timezone);
+    
+    setVenueClosed(isClosed);
     setCanDeliverASAP(canDeliverNow);
-    // Force scheduled delivery if venue is closing soon
-    if (!canDeliverNow) {
+    
+    // Force scheduled delivery if venue is closed or closing soon
+    if (isClosed || !canDeliverNow) {
       setUseScheduledDelivery(true);
     }
-  }, [venueSchedule]);
+  }, [venueSchedule, timezone]);
 
   // Geocode address when it changes
   useEffect(() => {
@@ -495,8 +500,22 @@ export default function CheckoutPage() {
               )}
             </div>
             
-            {/* Warning if venue is closed or closing soon */}
-            {!canDeliverASAP && (
+            {/* Warning if venue is closed */}
+            {venueClosed && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium text-red-900 mb-1">Venue Closed</p>
+                  <p>
+                    The venue is currently closed based on the schedule ({venueSchedule.openTime} - {venueSchedule.closeTime}). 
+                    Please schedule your delivery for when the venue is open.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Warning if venue is closing soon but still open */}
+            {!venueClosed && !canDeliverASAP && (
               <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-gray-700">
@@ -510,7 +529,7 @@ export default function CheckoutPage() {
             )}
 
             {/* ASAP vs Scheduled Toggle */}
-            {canDeliverASAP ? (
+            {!venueClosed && canDeliverASAP ? (
               <div className="space-y-4">
                 {/* ASAP Delivery Option */}
                 <div className="flex items-start gap-3">
