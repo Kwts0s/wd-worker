@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { XCircle, ExternalLink, RefreshCw, ShoppingCart } from 'lucide-react';
+import { XCircle, ExternalLink, RefreshCw, ShoppingCart, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import type { DeliveryResponse } from '@/types/wolt-drive';
 
 interface Delivery {
   id: number;
@@ -19,6 +20,7 @@ interface Delivery {
   customer_name: string;
   dropoff_address: string;
   created_at: string;
+  delivery_data: string;
 }
 
 export default function AdminDeliveriesPage() {
@@ -27,6 +29,7 @@ export default function AdminDeliveriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [expandedDeliveryId, setExpandedDeliveryId] = useState<number | null>(null);
 
   const loadDeliveries = async () => {
     setLoading(true);
@@ -152,79 +155,195 @@ export default function AdminDeliveriesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {deliveries.map((delivery) => (
-                      <tr key={delivery.id} className="border-b last:border-b-0 hover:bg-muted/50">
-                        <td className="p-4">
-                          <div className="font-mono text-sm">
-                            {delivery.merchant_order_reference_id || delivery.wolt_order_reference_id.slice(0, 8)}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="font-medium">{delivery.customer_name}</div>
-                          <div className="text-sm text-muted-foreground line-clamp-1">
-                            {delivery.dropoff_address}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="text-sm">{delivery.venue_name || 'N/A'}</div>
-                        </td>
-                        <td className="p-4">
-                          <Badge className={`${getStatusColor(delivery.status)} text-white`}>
-                            {delivery.status}
-                          </Badge>
-                        </td>
-                        <td className="p-4">
-                          <div className="font-semibold">
-                            {delivery.price_currency} {(delivery.price_amount / 100).toFixed(2)}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          {delivery.tracking_url ? (
-                            <a
-                              href={delivery.tracking_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-primary hover:underline text-sm"
-                            >
-                              Track <ExternalLink className="h-3 w-3 ml-1" />
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">N/A</span>
-                          )}
-                        </td>
-                        <td className="p-4">
-                          <div className="text-sm">
-                            {new Date(delivery.created_at).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(delivery.created_at).toLocaleTimeString()}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          {canCancel(delivery.status) ? (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleCancel(delivery.wolt_order_reference_id)}
-                              disabled={cancellingId === delivery.wolt_order_reference_id}
-                            >
-                              {cancellingId === delivery.wolt_order_reference_id ? (
-                                'Cancelling...'
+                    {deliveries.map((delivery) => {
+                      const isExpanded = expandedDeliveryId === delivery.id;
+                      let deliveryDetails: DeliveryResponse | null = null;
+                      
+                      try {
+                        deliveryDetails = delivery.delivery_data ? JSON.parse(delivery.delivery_data) : null;
+                      } catch (e) {
+                        console.error('Failed to parse delivery data:', e);
+                      }
+
+                      return (
+                        <>
+                          <tr key={delivery.id} className="border-b hover:bg-muted/50 cursor-pointer">
+                            <td className="p-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setExpandedDeliveryId(isExpanded ? null : delivery.id)}
+                                className="p-0 h-auto hover:bg-transparent"
+                              >
+                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </Button>
+                              <div className="font-mono text-sm inline-block ml-2">
+                                {delivery.merchant_order_reference_id || delivery.wolt_order_reference_id.slice(0, 8)}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="font-medium">{delivery.customer_name}</div>
+                              <div className="text-sm text-muted-foreground line-clamp-1">
+                                {delivery.dropoff_address}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-sm">{delivery.venue_name || 'N/A'}</div>
+                            </td>
+                            <td className="p-4">
+                              <Badge className={`${getStatusColor(delivery.status)} text-white`}>
+                                {delivery.status}
+                              </Badge>
+                            </td>
+                            <td className="p-4">
+                              <div className="font-semibold">
+                                {delivery.price_currency} {(delivery.price_amount / 100).toFixed(2)}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              {delivery.tracking_url ? (
+                                <a
+                                  href={delivery.tracking_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-primary hover:underline text-sm"
+                                >
+                                  Track <ExternalLink className="h-3 w-3 ml-1" />
+                                </a>
                               ) : (
-                                <>
-                                  <XCircle className="h-4 w-4 mr-1" />
-                                  Cancel
-                                </>
+                                <span className="text-muted-foreground text-sm">N/A</span>
                               )}
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              {delivery.status === 'cancelled' ? 'Cancelled' : 'Cannot cancel'}
-                            </span>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-sm">
+                                {new Date(delivery.created_at).toLocaleDateString()}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(delivery.created_at).toLocaleTimeString()}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              {canCancel(delivery.status) ? (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancel(delivery.wolt_order_reference_id);
+                                  }}
+                                  disabled={cancellingId === delivery.wolt_order_reference_id}
+                                >
+                                  {cancellingId === delivery.wolt_order_reference_id ? (
+                                    'Cancelling...'
+                                  ) : (
+                                    <>
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Cancel
+                                    </>
+                                  )}
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  {delivery.status === 'cancelled' ? 'Cancelled' : 'Cannot cancel'}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                          {isExpanded && deliveryDetails && (
+                            <tr key={`${delivery.id}-details`} className="border-b bg-muted/30">
+                              <td colSpan={8} className="p-6">
+                                <div className="space-y-4">
+                                  <h4 className="font-semibold text-lg flex items-center gap-2">
+                                    <Package className="h-5 w-5" />
+                                    Delivery Details
+                                  </h4>
+                                  
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Pickup Information */}
+                                    <Card className="p-4">
+                                      <h5 className="font-semibold mb-2">Pickup Information</h5>
+                                      <div className="space-y-1 text-sm">
+                                        <p><span className="font-medium">Location:</span> {deliveryDetails.pickup?.display_name || 'N/A'}</p>
+                                        <p><span className="font-medium">Address:</span> {deliveryDetails.pickup?.location?.formatted_address || 'N/A'}</p>
+                                        <p><span className="font-medium">Comment:</span> {deliveryDetails.pickup?.comment || 'N/A'}</p>
+                                        {deliveryDetails.pickup?.eta && (
+                                          <p><span className="font-medium">ETA:</span> {new Date(deliveryDetails.pickup.eta).toLocaleString()}</p>
+                                        )}
+                                      </div>
+                                    </Card>
+
+                                    {/* Dropoff Information */}
+                                    <Card className="p-4">
+                                      <h5 className="font-semibold mb-2">Dropoff Information</h5>
+                                      <div className="space-y-1 text-sm">
+                                        <p><span className="font-medium">Address:</span> {deliveryDetails.dropoff?.location?.formatted_address || delivery.dropoff_address}</p>
+                                        <p><span className="font-medium">Comment:</span> {deliveryDetails.dropoff?.comment || 'N/A'}</p>
+                                        {deliveryDetails.dropoff?.eta && (
+                                          <p><span className="font-medium">ETA:</span> {new Date(deliveryDetails.dropoff.eta).toLocaleString()}</p>
+                                        )}
+                                      </div>
+                                    </Card>
+
+                                    {/* Customer Information */}
+                                    <Card className="p-4">
+                                      <h5 className="font-semibold mb-2">Customer Information</h5>
+                                      <div className="space-y-1 text-sm">
+                                        <p><span className="font-medium">Name:</span> {deliveryDetails.recipient?.name}</p>
+                                        <p><span className="font-medium">Phone:</span> {deliveryDetails.recipient?.phone_number}</p>
+                                        <p><span className="font-medium">Email:</span> {deliveryDetails.recipient?.email}</p>
+                                      </div>
+                                    </Card>
+
+                                    {/* Parcels Information */}
+                                    <Card className="p-4">
+                                      <h5 className="font-semibold mb-2">Parcels</h5>
+                                      <div className="space-y-2 text-sm">
+                                        {deliveryDetails.parcels?.map((parcel, idx) => (
+                                          <div key={idx} className="border-l-2 border-primary pl-2">
+                                            <p className="font-medium">{parcel.description}</p>
+                                            <p className="text-muted-foreground">
+                                              Quantity: {parcel.count} | Price: {parcel.price.currency} {(parcel.price.amount / 100).toFixed(2)}
+                                            </p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </Card>
+                                  </div>
+
+                                  {/* Courier Information */}
+                                  {deliveryDetails.courier && (
+                                    <Card className="p-4">
+                                      <h5 className="font-semibold mb-2">Courier Information</h5>
+                                      <div className="space-y-1 text-sm">
+                                        <p><span className="font-medium">Name:</span> {deliveryDetails.courier.name}</p>
+                                        <p><span className="font-medium">Phone:</span> {deliveryDetails.courier.phone_number}</p>
+                                      </div>
+                                    </Card>
+                                  )}
+
+                                  {/* Timeline */}
+                                  {deliveryDetails.timeline && deliveryDetails.timeline.length > 0 && (
+                                    <Card className="p-4">
+                                      <h5 className="font-semibold mb-2">Timeline</h5>
+                                      <div className="space-y-2">
+                                        {deliveryDetails.timeline.map((event, idx) => (
+                                          <div key={idx} className="flex items-center gap-2 text-sm">
+                                            <Badge variant="outline">{event.status}</Badge>
+                                            <span className="text-muted-foreground">
+                                              {new Date(event.timestamp).toLocaleString()}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </Card>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
                           )}
-                        </td>
-                      </tr>
-                    ))}
+                        </>
+                      );
+                    })}
                   </tbody>
                 </table>
               </Card>

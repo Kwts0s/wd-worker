@@ -251,6 +251,7 @@ export function getAllDeliveries(): Array<{
   customer_name: string;
   dropoff_address: string;
   created_at: string;
+  delivery_data: string;
 }> {
   const db = getDatabase();
   const stmt = db.prepare(`
@@ -265,7 +266,8 @@ export function getAllDeliveries(): Array<{
       tracking_url,
       customer_name,
       dropoff_address,
-      created_at
+      created_at,
+      delivery_data
     FROM deliveries
     ORDER BY created_at DESC
   `);
@@ -282,7 +284,60 @@ export function getAllDeliveries(): Array<{
     customer_name: string;
     dropoff_address: string;
     created_at: string;
+    delivery_data: string;
   }>;
+}
+
+/**
+ * Get delivery by ID with full details
+ */
+export function getDeliveryById(id: number): {
+  id: number;
+  wolt_order_reference_id: string;
+  merchant_order_reference_id: string;
+  venue_name: string;
+  status: string;
+  price_amount: number;
+  price_currency: string;
+  tracking_url: string;
+  customer_name: string;
+  dropoff_address: string;
+  created_at: string;
+  delivery_data: string;
+} | undefined {
+  const db = getDatabase();
+  const stmt = db.prepare(`
+    SELECT 
+      id,
+      wolt_order_reference_id,
+      merchant_order_reference_id,
+      venue_name,
+      status,
+      price_amount,
+      price_currency,
+      tracking_url,
+      customer_name,
+      dropoff_address,
+      created_at,
+      delivery_data
+    FROM deliveries
+    WHERE id = ?
+  `);
+  
+  return stmt.get(id) as {
+    id: number;
+    wolt_order_reference_id: string;
+    merchant_order_reference_id: string;
+    venue_name: string;
+    status: string;
+    price_amount: number;
+    price_currency: string;
+    tracking_url: string;
+    customer_name: string;
+    dropoff_address: string;
+    created_at: string;
+    delivery_data: string;
+  } | undefined;
 }
 
 /**
