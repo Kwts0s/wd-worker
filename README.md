@@ -58,11 +58,18 @@ Visit http://localhost:3000 to access the web interface.
 - ✅ Complete API type definitions
 - ✅ Create and manage deliveries
 - ✅ Get delivery quotes (shipment promises)
-- ✅ Local delivery storage with browser persistence
+- ✅ Multi-venue support
+- ✅ Persistent delivery storage (SQLite database)
+- ✅ Cancel deliveries
+- ✅ Webhook support for real-time status updates
+- ✅ Webhook event logging and monitoring
+- ✅ Scheduled deliveries
+- ✅ Cash on Delivery (COD) support
+- ✅ Handshake delivery (PIN verification)
 - ✅ Detailed delivery information pages
 - ✅ Persistent configuration
 - ✅ Responsive UI design
-- ✅ Error handling
+- ✅ Error handling and retry logic
 - ✅ Loading states
 - ✅ API request logging
 
