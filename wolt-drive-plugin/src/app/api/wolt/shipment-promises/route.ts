@@ -39,8 +39,7 @@ export async function POST(request: NextRequest) {
     const woltApiUrl = `${baseURL}/v1/venues/${venueId}/shipment-promises`;
     
     // Remove venue_id from body before sending to Wolt API
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { venue_id, ...cleanRequestBody } = requestBody as DeliveryQuoteRequest & { venue_id?: string };
+    const { venue_id: _venue_id, ...cleanRequestBody } = requestBody as DeliveryQuoteRequest & { venue_id?: string };
     
     let response = await fetch(woltApiUrl, {
       method: 'POST',
@@ -92,7 +91,7 @@ export async function POST(request: NextRequest) {
               const bufferedDate = new Date(testDate.getTime() + 5000);
               adjustedTime = bufferedDate.toISOString();
               console.log(`Adjusted retry time with 5s buffer: ${adjustedTime}`);
-            } catch (e) {
+            } catch {
               console.error('Invalid earliest time format:', earliestTime);
               const errorResponse = { error: `Wolt API error: ${errorText}` };
               await logApiCall(requestBody, errorResponse, response.status, startTime, 'shipment-promise');

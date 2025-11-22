@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MultiStepDeliveryForm } from '@/components/multi-step-delivery-form';
-import { DeliveryList } from '@/components/delivery-list';
 import { ApiLogs } from '@/components/api-logs';
+import { WebhookLogs } from '@/components/webhook-logs';
 import { Button } from '@/components/ui/button';
 import { 
   Menu, 
@@ -13,11 +13,12 @@ import {
   Package, 
   FileText, 
   Settings as SettingsIcon,
-  Truck
+  Truck,
+  Webhook
 } from 'lucide-react';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'create' | 'list' | 'logs'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'list' | 'logs' | 'webhooks'>('create');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const router = useRouter();
 
@@ -25,6 +26,7 @@ export default function Home() {
     { id: 'create', label: 'Create Order', icon: Plus },
     { id: 'list', label: 'Deliveries', icon: Package },
     { id: 'logs', label: 'API Logs', icon: FileText },
+    { id: 'webhooks', label: 'Webhooks', icon: Webhook },
   ];
 
   return (
@@ -150,6 +152,7 @@ export default function Home() {
               </div>
             )}
             {activeTab === 'logs' && <ApiLogs />}
+            {activeTab === 'webhooks' && <WebhookLogs />}
           </div>
         </main>
       </div>

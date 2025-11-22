@@ -82,7 +82,7 @@ export default function SettingsPage() {
               Venue Schedule
             </CardTitle>
             <CardDescription>
-              Set your venue's operating hours. Orders placed outside these hours will be scheduled for the next opening time.
+              Set your venue&apos;s operating hours. Orders placed outside these hours will be scheduled for the next opening time.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -118,7 +118,7 @@ export default function SettingsPage() {
                 placeholder="60"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Minimum time needed to prepare orders for delivery (30-180 minutes). This prevents "too early" API errors.
+                Minimum time needed to prepare orders for delivery (30-180 minutes). This prevents &quot;too early&quot; API errors.
               </p>
             </div>
             <p className="text-xs text-muted-foreground mt-4">
