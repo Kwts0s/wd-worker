@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ShoppingCart, MapPin, Loader2, CheckCircle2, AlertCircle, Map, Calendar, RefreshCw } from 'lucide-react';
 import { usePluginSettings } from '@/lib/settings-store';
-import { calculateScheduledDropoffTime, hasEnoughTimeForImmediateDelivery, getAvailableDeliveryDates, getAvailableTimeSlots } from '@/lib/schedule-utils';
+import { calculateScheduledDropoffTime, hasEnoughTimeForImmediateDelivery, getAvailableDeliveryDates, getAvailableTimeSlots, isVenueClosed } from '@/lib/schedule-utils';
 import { useWoltDriveStore } from '@/store/wolt-store';
 import type { AvailableVenue, ShipmentPromiseResponse, DeliveryResponse } from '@/types/wolt-drive';
 
@@ -47,7 +47,9 @@ export default function CheckoutPage() {
   const [scheduledTime, setScheduledTime] = useState('');
   const [useScheduledDelivery, setUseScheduledDelivery] = useState(false);
   const [canDeliverASAP, setCanDeliverASAP] = useState(true);
+  const [venueClosed, setVenueClosed] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [calculatedScheduledTime, setCalculatedScheduledTime] = useState<string>('');
   
   const [availableVenues, setAvailableVenues] = useState<AvailableVenue[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<AvailableVenue | null>(null);
@@ -65,14 +67,18 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
-    // Check if venue has enough time for immediate delivery
-    const canDeliverNow = hasEnoughTimeForImmediateDelivery(venueSchedule);
+    // Check if venue is closed or closing soon
+    const isClosed = isVenueClosed(venueSchedule, timezone);
+    const canDeliverNow = hasEnoughTimeForImmediateDelivery(venueSchedule, timezone);
+    
+    setVenueClosed(isClosed);
     setCanDeliverASAP(canDeliverNow);
-    // Force scheduled delivery if venue is closing soon
-    if (!canDeliverNow) {
+    
+    // Force scheduled delivery if venue is closed or closing soon
+    if (isClosed || !canDeliverNow) {
       setUseScheduledDelivery(true);
     }
-  }, [venueSchedule]);
+  }, [venueSchedule, timezone]);
 
   // Geocode address when it changes
   useEffect(() => {
@@ -192,6 +198,9 @@ export default function CheckoutPage() {
         scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone, preparationTimeMinutes);
       }
       
+      // Store the calculated time for display
+      setCalculatedScheduledTime(scheduledTimeToUse);
+      
       const response = await fetch('/api/wolt/shipment-promises', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -212,6 +221,12 @@ export default function CheckoutPage() {
 
       const promise = await response.json();
       setShipmentPromise(promise);
+      
+      // Update the calculated time with the actual time from the shipment promise
+      // This ensures we use the same time when creating the delivery
+      if (promise.dropoff?.options?.scheduled_time) {
+        setCalculatedScheduledTime(promise.dropoff.options.scheduled_time);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get delivery estimate');
     } finally {
@@ -238,10 +253,16 @@ export default function CheckoutPage() {
       const lon = parseFloat(longitude);
       const orderNumber = `ORDER-${Date.now()}`;
       
+      // Use the scheduled time from the shipment promise to ensure it matches
+      // The shipment promise may have adjusted the time due to retry logic
       let scheduledTimeToUse: string;
-      if (useScheduledDelivery && scheduledDate && scheduledTime) {
+      if (shipmentPromise.dropoff?.options?.scheduled_time) {
+        // Use the exact time from the shipment promise
+        scheduledTimeToUse = shipmentPromise.dropoff.options.scheduled_time;
+      } else if (useScheduledDelivery && scheduledDate && scheduledTime) {
         scheduledTimeToUse = `${scheduledDate}T${scheduledTime}:00.000Z`;
       } else {
+        // Fallback to calculated time (should not normally reach here)
         scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone, preparationTimeMinutes);
       }
 
@@ -495,8 +516,22 @@ export default function CheckoutPage() {
               )}
             </div>
             
-            {/* Warning if venue is closed or closing soon */}
-            {!canDeliverASAP && (
+            {/* Warning if venue is closed */}
+            {venueClosed && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium text-red-900 mb-1">Venue Closed</p>
+                  <p>
+                    The venue is currently closed based on the schedule ({venueSchedule.openTime} - {venueSchedule.closeTime}). 
+                    Please schedule your delivery for when the venue is open.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Warning if venue is closing soon but still open */}
+            {!venueClosed && !canDeliverASAP && (
               <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-gray-700">
@@ -510,7 +545,7 @@ export default function CheckoutPage() {
             )}
 
             {/* ASAP vs Scheduled Toggle */}
-            {canDeliverASAP ? (
+            {!venueClosed && canDeliverASAP ? (
               <div className="space-y-4">
                 {/* ASAP Delivery Option */}
                 <div className="flex items-start gap-3">
@@ -527,6 +562,19 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-600">
                       Delivery within approximately {preparationTimeMinutes} minutes (venue hours: {venueSchedule.openTime} - {venueSchedule.closeTime})
                     </p>
+                    {calculatedScheduledTime && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Scheduled delivery time: {new Date(calculatedScheduledTime).toLocaleString('en-US', {
+                          timeZone: timezone,
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false
+                        })}
+                      </p>
+                    )}
                   </label>
                 </div>
 

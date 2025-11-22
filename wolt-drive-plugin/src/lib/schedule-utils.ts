@@ -14,8 +14,9 @@ export function calculateScheduledDropoffTime(
 ): string {
   const now = new Date();
   
-  // Add 5-minute safety buffer to prevent "too early" errors
-  const safetyBufferMs = 5 * 60 * 1000;
+  // Add 15-minute safety buffer to prevent "too early" errors
+  // This accounts for API processing time, network delays, and clock skew
+  const safetyBufferMs = 15 * 60 * 1000;
   const baseTime = new Date(now.getTime() + safetyBufferMs);
   
   // Parse venue hours
@@ -23,8 +24,13 @@ export function calculateScheduledDropoffTime(
   const [closeHour, closeMinute] = venueSchedule.closeTime.split(':').map(Number);
   
   // Get current time components in the specified timezone
-  const currentHour = baseTime.getHours();
-  const currentMinute = baseTime.getMinutes();
+  const timeString = baseTime.toLocaleString('en-US', { 
+    timeZone: timezone,
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  const [currentHour, currentMinute] = timeString.split(':').map(Number);
   
   // Convert times to minutes since midnight for easier comparison
   const currentTimeInMinutes = currentHour * 60 + currentMinute;
@@ -66,10 +72,15 @@ export function calculateScheduledDropoffTime(
 /**
  * Check if venue is currently open
  */
-export function isVenueOpen(venueSchedule: VenueSchedule): boolean {
+export function isVenueOpen(venueSchedule: VenueSchedule, timezone: string = 'Europe/Athens'): boolean {
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  const timeString = now.toLocaleString('en-US', { 
+    timeZone: timezone,
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  const [currentHour, currentMinute] = timeString.split(':').map(Number);
   
   const [openHour, openMinute] = venueSchedule.openTime.split(':').map(Number);
   const [closeHour, closeMinute] = venueSchedule.closeTime.split(':').map(Number);
@@ -85,10 +96,15 @@ export function isVenueOpen(venueSchedule: VenueSchedule): boolean {
  * Get minutes until venue closes
  * Returns negative if venue is already closed
  */
-export function getMinutesUntilClose(venueSchedule: VenueSchedule): number {
+export function getMinutesUntilClose(venueSchedule: VenueSchedule, timezone: string = 'Europe/Athens'): number {
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  const timeString = now.toLocaleString('en-US', { 
+    timeZone: timezone,
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  const [currentHour, currentMinute] = timeString.split(':').map(Number);
   
   const [closeHour, closeMinute] = venueSchedule.closeTime.split(':').map(Number);
   
@@ -101,9 +117,16 @@ export function getMinutesUntilClose(venueSchedule: VenueSchedule): number {
 /**
  * Check if there's enough time for immediate delivery (needs at least 90 minutes before close)
  */
-export function hasEnoughTimeForImmediateDelivery(venueSchedule: VenueSchedule): boolean {
-  const minutesUntilClose = getMinutesUntilClose(venueSchedule);
+export function hasEnoughTimeForImmediateDelivery(venueSchedule: VenueSchedule, timezone: string = 'Europe/Athens'): boolean {
+  const minutesUntilClose = getMinutesUntilClose(venueSchedule, timezone);
   return minutesUntilClose >= 90; // Need at least 90 minutes (30 prep + 60 delivery)
+}
+
+/**
+ * Check if venue is currently closed (outside operating hours)
+ */
+export function isVenueClosed(venueSchedule: VenueSchedule, timezone: string = 'Europe/Athens'): boolean {
+  return !isVenueOpen(venueSchedule, timezone);
 }
 
 /**
