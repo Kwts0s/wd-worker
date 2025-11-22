@@ -49,6 +49,7 @@ export default function CheckoutPage() {
   const [canDeliverASAP, setCanDeliverASAP] = useState(true);
   const [venueClosed, setVenueClosed] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [calculatedScheduledTime, setCalculatedScheduledTime] = useState<string>('');
   
   const [availableVenues, setAvailableVenues] = useState<AvailableVenue[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<AvailableVenue | null>(null);
@@ -196,6 +197,9 @@ export default function CheckoutPage() {
       } else {
         scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone, preparationTimeMinutes);
       }
+      
+      // Store the calculated time for display
+      setCalculatedScheduledTime(scheduledTimeToUse);
       
       const response = await fetch('/api/wolt/shipment-promises', {
         method: 'POST',
@@ -546,6 +550,19 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-600">
                       Delivery within approximately {preparationTimeMinutes} minutes (venue hours: {venueSchedule.openTime} - {venueSchedule.closeTime})
                     </p>
+                    {calculatedScheduledTime && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Scheduled delivery time: {new Date(calculatedScheduledTime).toLocaleString('en-US', {
+                          timeZone: timezone,
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false
+                        })}
+                      </p>
+                    )}
                   </label>
                 </div>
 

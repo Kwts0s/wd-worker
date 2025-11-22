@@ -56,11 +56,32 @@ export async function POST(request: NextRequest) {
           const errorJson = JSON.parse(errorText);
           
           // Look for earliest_scheduled_dropoff_time in error response
-          const earliestTime = errorJson.earliest_scheduled_dropoff_time || 
+          let earliestTime = errorJson.earliest_scheduled_dropoff_time || 
                               errorJson.details?.earliest_scheduled_dropoff_time;
+          
+          // If not found directly, try to extract from details message
+          if (!earliestTime && errorJson.details) {
+            const match = errorJson.details.match(/Earliest possible delivery at (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z)/);
+            if (match && match[1]) {
+              earliestTime = match[1];
+            }
+          }
           
           if (earliestTime) {
             console.log(`Found earliest time: ${earliestTime}, retrying with updated schedule...`);
+            
+            // Validate the datetime format before using it
+            try {
+              const testDate = new Date(earliestTime);
+              if (isNaN(testDate.getTime())) {
+                throw new Error('Invalid datetime');
+              }
+            } catch (e) {
+              console.error('Invalid earliest time format:', earliestTime);
+              const errorResponse = { error: `Wolt API error: ${errorText}` };
+              await logApiCall(requestBody, errorResponse, response.status, startTime, 'create-delivery');
+              return NextResponse.json(errorResponse, { status: response.status });
+            }
             
             // Update the scheduled times in the request
             const retryRequestBody = {

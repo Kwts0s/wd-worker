@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
           // If not found directly, try to extract from details message
           // Example: "Scheduled time (2025-11-18T23:31:14.456Z) is too early. Earliest possible delivery at 2025-11-18T23:51:14.929Z."
           if (!earliestTime && errorJson.details) {
-            const match = errorJson.details.match(/Earliest possible delivery at ([0-9T:.Z-]+)/);
+            // Match ISO 8601 datetime format more precisely
+            const match = errorJson.details.match(/Earliest possible delivery at (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z)/);
             if (match && match[1]) {
               earliestTime = match[1];
             }
@@ -77,6 +78,19 @@ export async function POST(request: NextRequest) {
           
           if (earliestTime) {
             console.log(`Found earliest time: ${earliestTime}, retrying with updated schedule...`);
+            
+            // Validate the datetime format before using it
+            try {
+              const testDate = new Date(earliestTime);
+              if (isNaN(testDate.getTime())) {
+                throw new Error('Invalid datetime');
+              }
+            } catch (e) {
+              console.error('Invalid earliest time format:', earliestTime);
+              const errorResponse = { error: `Wolt API error: ${errorText}` };
+              await logApiCall(requestBody, errorResponse, response.status, startTime, 'shipment-promise');
+              return NextResponse.json(errorResponse, { status: response.status });
+            }
             
             // Update the scheduled time in the request
             const retryRequestBody = {
