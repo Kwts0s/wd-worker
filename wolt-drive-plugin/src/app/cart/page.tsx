@@ -148,7 +148,7 @@ export default function CartPage() {
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-bold text-gray-900">€{product.price.toFixed(2)}</span>
-                    <Button onClick={() => addToCart(product)} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => addToCart(product)} size="sm" className="" variant="outline">
                       <Plus className="h-4 w-4 mr-1" /> Add
                     </Button>
                   </div>
@@ -262,7 +262,8 @@ export default function CartPage() {
               {cart.length > 0 && (
                 <Button 
                   onClick={handleCheckout}
-                  className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700"
+                  className="w-full h-12 text-lg font-semibold"
+                  variant="outline"
                 >
                   {deliveryMethod === 'wolt' ? 'Continue to Checkout' : 'Place Order'}
                 </Button>
