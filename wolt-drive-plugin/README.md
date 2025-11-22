@@ -8,7 +8,9 @@ A complete delivery integration plugin for e-commerce platforms using the Wolt D
   - Create deliveries
   - Get delivery quotes (shipment promises)
   - View delivery details
-  - Local delivery storage (session-based)
+  - Cancel deliveries
+  - Webhook support for real-time status updates
+  - Persistent delivery storage (SQLite database)
   - Beautiful delivery detail pages
 
 - **Modern Tech Stack**
@@ -46,7 +48,10 @@ NEXT_PUBLIC_WOLT_API_TOKEN=your_api_token_here
 NEXT_PUBLIC_WOLT_MERCHANT_ID=your_merchant_id_here
 NEXT_PUBLIC_WOLT_VENUE_ID=your_venue_id_here
 NEXT_PUBLIC_WOLT_IS_DEVELOPMENT=true
+WOLT_WEBHOOK_SECRET=your_webhook_secret_here
 ```
+
+**Note:** The `WOLT_WEBHOOK_SECRET` is optional but highly recommended for production to verify webhook signatures.
 
 3. **Run the development server:**
 ```bash
@@ -80,12 +85,36 @@ Navigate to "Create Delivery" tab:
 ### 3. Viewing Deliveries
 
 Navigate to "Deliveries" tab:
-- View all deliveries created in this session
-- Deliveries are stored locally in browser storage (Zustand with persistence)
+- View all deliveries created in your system
+- Deliveries are stored in a SQLite database
 - Click on any delivery card to view full details
 - See comprehensive delivery information including tracking, pricing, locations, recipient details, and parcels
+- Real-time status updates via webhooks
 
-**Note:** The Wolt Drive venueful API doesn't provide an endpoint to list deliveries, so this plugin stores deliveries locally when they are created. Deliveries persist across browser sessions using local storage.
+### 4. Webhook Integration
+
+The plugin supports real-time delivery status updates via webhooks:
+
+1. **Configure your webhook endpoint in Wolt Merchant Dashboard:**
+   - Navigate to Developer Settings
+   - Add webhook URL: `https://yourdomain.com/api/wolt/webhooks`
+   - Save the webhook secret in your environment variables
+
+2. **Webhook events handled:**
+   - `delivery.created` - New delivery created
+   - `delivery.status_changed` - Delivery status updated
+   - `delivery.delivered` - Delivery completed
+   - `delivery.cancelled` - Delivery cancelled
+
+3. **View webhook logs:**
+   - Navigate to the "Webhooks" tab to see all received webhook events
+   - Monitor delivery status changes in real-time
+   - Debug webhook issues with detailed payload information
+
+4. **Security:**
+   - All webhooks are verified using HMAC SHA-256 signatures
+   - Set `WOLT_WEBHOOK_SECRET` environment variable to enable signature verification
+   - Unauthorized requests are rejected automatically
 
 ## 🗂️ Project Structure
 
@@ -175,16 +204,15 @@ function MyComponent() {
 
 ## 📚 API Documentation
 
-### Important Note About Wolt Drive Venueful API
+### Database Storage
 
-The Wolt Drive venueful endpoints (for venues) **do not support listing deliveries**. The GET endpoint returns a 405 Method Not Allowed error. This is why this plugin stores deliveries locally using Zustand with browser storage persistence.
+This plugin uses SQLite for persistent storage of:
+- Deliveries created through the system
+- Webhook events received from Wolt Drive
+- Mock products for the e-shop demo
+- Customer and order data structures
 
-When you create a delivery, the complete delivery response is stored locally and persists across browser sessions. This allows you to:
-- View all deliveries you've created in this session
-- Access full delivery details
-- Track delivery information
-
-For production use, consider implementing your own backend database to store delivery information if you need to access delivery history across devices or sessions.
+The database file is stored in the `data/` directory and persists across application restarts.
 
 ### Postman Collection
 
@@ -219,9 +247,10 @@ The project uses Tailwind CSS with Shadcn UI theming. Customize colors in `src/a
 
 1. **Never commit API keys** - Use environment variables
 2. **Server-side API calls** - Keep tokens on the server when possible
-3. **Validate webhook signatures** - Verify webhook authenticity
+3. **Validate webhook signatures** - Always set `WOLT_WEBHOOK_SECRET` and verify signatures
 4. **Rate limiting** - Implement rate limiting on your endpoints
 5. **Input validation** - Always validate user inputs
+6. **Database security** - Restrict file system access to the `data/` directory in production
 
 ## 📦 Production Deployment
 

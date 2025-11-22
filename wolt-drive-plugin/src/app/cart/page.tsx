@@ -27,7 +27,14 @@ type DeliveryMethod = 'pickup' | 'acs' | 'wolt';
 export default function CartPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Initialize cart from localStorage
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedCart = localStorage.getItem('cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    }
+    return [];
+  });
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('wolt');
 
   // Load products
@@ -36,12 +43,6 @@ export default function CartPage() {
       .then(res => res.json())
       .then(data => setProducts(data.products || []))
       .catch(err => console.error('Failed to load products:', err));
-
-    // Load cart from localStorage
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
   }, []);
 
   // Save cart to localStorage

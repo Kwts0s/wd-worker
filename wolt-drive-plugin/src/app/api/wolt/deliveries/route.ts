@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
               const bufferedDate = new Date(testDate.getTime() + 5000);
               adjustedTime = bufferedDate.toISOString();
               console.log(`Adjusted retry time with 5s buffer: ${adjustedTime}`);
-            } catch (e) {
+            } catch {
               console.error('Invalid earliest time format:', earliestTime);
               const errorResponse = { error: `Wolt API error: ${errorText}` };
               await logApiCall(requestBody, errorResponse, response.status, startTime, 'create-delivery');

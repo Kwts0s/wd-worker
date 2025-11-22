@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
@@ -122,7 +122,8 @@ export default function CheckoutPage() {
     if (useScheduledDelivery && scheduledDate && scheduledTime && street && city && postCode) {
       fetchAvailableVenues();
     }
-  }, [scheduledDate, scheduledTime]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduledDate, scheduledTime, useScheduledDelivery, street, city, postCode]);
 
   const getCartTotal = () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -134,7 +135,7 @@ export default function CheckoutPage() {
     setLongitude(location.longitude);
   };
 
-  const fetchAvailableVenues = async () => {
+  const fetchAvailableVenues = useCallback(async () => {
     if (!street || !city || !postCode) return;
     
     setLoading(true);
@@ -180,7 +181,8 @@ export default function CheckoutPage() {
     } finally {
       setLoading(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [street, city, postCode, latitude, longitude, useScheduledDelivery, scheduledDate, scheduledTime, venueSchedule, timezone, preparationTimeMinutes]);
 
   const handleAddressBlur = () => {
     fetchAvailableVenues();

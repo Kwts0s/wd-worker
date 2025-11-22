@@ -1,10 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  DeliveryQuoteRequest,
   ShipmentPromiseRequest,
   CreateDeliveryRequest,
   CancelDeliveryRequest,
-  DeliveryStatus,
   AvailableVenuesRequest,
 } from '@/types/wolt-drive';
 import { useWoltDriveStore } from '@/store/wolt-store';
@@ -18,35 +16,7 @@ export const queryKeys = {
   shipmentPromise: ['shipmentPromise'] as const,
 };
 
-/**
- * Hook to get a shipment promise (quote with promise ID)
- * @deprecated Use useShipmentPromiseMutation instead
- */
-export function useShipmentPromise(request: ShipmentPromiseRequest | null) {
-  return useQuery({
-    queryKey: [...queryKeys.shipmentPromise, request],
-    queryFn: async () => {
-      throw new Error('This hook is deprecated. Use useShipmentPromiseMutation instead.');
-    },
-    enabled: false, // Disabled - use mutation instead
-    staleTime: 60000, // 1 minute
-  });
-}
 
-/**
- * Hook to get a delivery quote
- * @deprecated Use useShipmentPromiseMutation for quotes with promise ID
- */
-export function useDeliveryQuote(request: DeliveryQuoteRequest | null) {
-  return useQuery({
-    queryKey: [...queryKeys.quote, request],
-    queryFn: async () => {
-      throw new Error('This hook is deprecated. Use useShipmentPromiseMutation instead.');
-    },
-    enabled: false, // Disabled - use mutation instead
-    staleTime: 60000, // 1 minute
-  });
-}
 
 /**
  * Hook to get a shipment promise as a mutation (manual trigger)
@@ -109,50 +79,6 @@ export function useCreateDelivery() {
       setError(error.message);
       setLoading(false);
     },
-  });
-}
-
-/**
- * Hook to get a single delivery
- * TODO: Implement API route for single delivery
- */
-export function useDelivery(deliveryId: string | null) {
-  // const { updateDelivery } = useWoltDriveStore(); // TODO: Use when implemented
-
-  const query = useQuery({
-    queryKey: deliveryId ? queryKeys.delivery(deliveryId) : ['delivery-null'],
-    queryFn: async () => {
-      if (!deliveryId) return null;
-      // TODO: Replace with API route call
-      throw new Error('Single delivery API not implemented yet');
-    },
-    enabled: false, // Disabled until API route is implemented
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
-
-  // TODO: Update store when data changes (disabled until implemented)
-  // if (query.data) {
-  //   updateDelivery(query.data.id, query.data);
-  // }
-
-  return query;
-}
-
-/**
- * Hook to list deliveries
- * @deprecated Wolt venueful API doesn't support listing deliveries. Use Zustand store instead.
- */
-export function useDeliveries(_params?: {
-  limit?: number;
-  offset?: number;
-  status?: DeliveryStatus;
-}) {
-  return useQuery({
-    queryKey: [...queryKeys.deliveries, _params],
-    queryFn: async () => {
-      throw new Error('List deliveries API not available for venueful endpoints. Use Zustand store instead.');
-    },
-    enabled: false, // Disabled - use Zustand store instead
   });
 }
 
@@ -227,19 +153,4 @@ export function useAvailableVenues() {
   });
 }
 
-/**
- * Hook to get tracking information
- * TODO: Implement API route for tracking
- */
-export function useTracking(deliveryId: string | null) {
-  return useQuery({
-    queryKey: deliveryId ? queryKeys.tracking(deliveryId) : ['tracking-null'],
-    queryFn: async () => {
-      if (!deliveryId) return null;
-      // TODO: Replace with API route call
-      throw new Error('Tracking API not implemented yet');
-    },
-    enabled: false, // Disabled until API route is implemented
-    refetchInterval: 15000, // Refetch every 15 seconds for real-time tracking
-  });
-}
+
