@@ -71,11 +71,18 @@ export async function POST(request: NextRequest) {
             console.log(`Found earliest time: ${earliestTime}, retrying with updated schedule...`);
             
             // Validate the datetime format before using it
+            let adjustedTime: string;
             try {
               const testDate = new Date(earliestTime);
               if (isNaN(testDate.getTime())) {
                 throw new Error('Invalid datetime');
               }
+              
+              // Add 5-second buffer to the earliest time to account for API processing delay
+              // This prevents the retry from also being "too early"
+              const bufferedDate = new Date(testDate.getTime() + 5000);
+              adjustedTime = bufferedDate.toISOString();
+              console.log(`Adjusted retry time with 5s buffer: ${adjustedTime}`);
             } catch (e) {
               console.error('Invalid earliest time format:', earliestTime);
               const errorResponse = { error: `Wolt API error: ${errorText}` };
@@ -83,21 +90,21 @@ export async function POST(request: NextRequest) {
               return NextResponse.json(errorResponse, { status: response.status });
             }
             
-            // Update the scheduled times in the request
+            // Update the scheduled times in the request with the buffered time
             const retryRequestBody = {
               ...cleanRequestBody,
               pickup: {
                 ...cleanRequestBody.pickup,
                 options: {
                   ...cleanRequestBody.pickup.options,
-                  scheduled_time: earliestTime
+                  scheduled_time: adjustedTime
                 }
               },
               dropoff: {
                 ...cleanRequestBody.dropoff,
                 options: {
                   ...cleanRequestBody.dropoff.options,
-                  scheduled_time: earliestTime
+                  scheduled_time: adjustedTime
                 }
               }
             };

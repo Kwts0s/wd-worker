@@ -14,9 +14,9 @@ export function calculateScheduledDropoffTime(
 ): string {
   const now = new Date();
   
-  // Add 10-minute safety buffer to prevent "too early" errors
-  // This accounts for API processing time and network delays
-  const safetyBufferMs = 10 * 60 * 1000;
+  // Add 15-minute safety buffer to prevent "too early" errors
+  // This accounts for API processing time, network delays, and clock skew
+  const safetyBufferMs = 15 * 60 * 1000;
   const baseTime = new Date(now.getTime() + safetyBufferMs);
   
   // Parse venue hours
