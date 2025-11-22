@@ -221,6 +221,12 @@ export default function CheckoutPage() {
 
       const promise = await response.json();
       setShipmentPromise(promise);
+      
+      // Update the calculated time with the actual time from the shipment promise
+      // This ensures we use the same time when creating the delivery
+      if (promise.dropoff?.options?.scheduled_time) {
+        setCalculatedScheduledTime(promise.dropoff.options.scheduled_time);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get delivery estimate');
     } finally {
@@ -247,10 +253,16 @@ export default function CheckoutPage() {
       const lon = parseFloat(longitude);
       const orderNumber = `ORDER-${Date.now()}`;
       
+      // Use the scheduled time from the shipment promise to ensure it matches
+      // The shipment promise may have adjusted the time due to retry logic
       let scheduledTimeToUse: string;
-      if (useScheduledDelivery && scheduledDate && scheduledTime) {
+      if (shipmentPromise.dropoff?.options?.scheduled_time) {
+        // Use the exact time from the shipment promise
+        scheduledTimeToUse = shipmentPromise.dropoff.options.scheduled_time;
+      } else if (useScheduledDelivery && scheduledDate && scheduledTime) {
         scheduledTimeToUse = `${scheduledDate}T${scheduledTime}:00.000Z`;
       } else {
+        // Fallback to calculated time (should not normally reach here)
         scheduledTimeToUse = calculateScheduledDropoffTime(venueSchedule, timezone, preparationTimeMinutes);
       }
 
