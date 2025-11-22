@@ -39,8 +39,7 @@ export async function POST(request: NextRequest) {
     const woltApiUrl = `${baseURL}/v1/venues/${venueId}/shipment-promises`;
     
     // Remove venue_id from body before sending to Wolt API
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { venue_id, ...cleanRequestBody } = requestBody as DeliveryQuoteRequest & { venue_id?: string };
+    const { venue_id: _venue_id, ...cleanRequestBody } = requestBody as DeliveryQuoteRequest & { venue_id?: string };
     
     let response = await fetch(woltApiUrl, {
       method: 'POST',

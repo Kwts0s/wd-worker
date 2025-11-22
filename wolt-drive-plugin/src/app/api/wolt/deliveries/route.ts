@@ -28,8 +28,7 @@ export async function POST(request: NextRequest) {
       : 'https://daas-public-api.wolt.com';
 
     // Remove venue_id from body before sending to Wolt API
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { venue_id, ...cleanRequestBody } = requestBody as CreateDeliveryRequest & { venue_id?: string };
+    const { venue_id: _venue_id, ...cleanRequestBody } = requestBody as CreateDeliveryRequest & { venue_id?: string };
 
     let response = await fetch(
       `${baseURL}/v1/venues/${venueId}/deliveries`,

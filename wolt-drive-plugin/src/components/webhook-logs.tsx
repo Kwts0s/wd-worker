@@ -138,7 +138,13 @@ export function WebhookLogs() {
                     View payload
                   </summary>
                   <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-40">
-                    {JSON.stringify(JSON.parse(event.payload), null, 2)}
+                    {(() => {
+                      try {
+                        return JSON.stringify(JSON.parse(event.payload), null, 2);
+                      } catch {
+                        return event.payload;
+                      }
+                    })()}
                   </pre>
                 </details>
               </div>
